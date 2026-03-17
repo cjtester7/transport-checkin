@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Transport Check-In Log v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --surface3: #2d333b;
+    --border: #30363d;
+    --accent: #f0a500;
+    --accent2: #ff6b35;
+    --green: #3fb950;
+    --red: #f85149;
+    --blue: #58a6ff;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --text3: #6e7681;
+    --radius: 10px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1a2233 0%, #0d1117 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 16px 16px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .header-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .header-subtitle {
+    font-size: 11px;
+    color: var(--text2);
+    font-weight: 400;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .header-date {
+    text-align: right;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .header-date strong {
+    display: block;
+    color: var(--accent);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 6px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 7px 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text2);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+
+  /* Main content */
+  .content { padding: 16px; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--accent);
+  }
+  .stat-label {
+    font-size: 10px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+  .stat-card.green .stat-num { color: var(--green); }
+  .stat-card.blue .stat-num { color: var(--blue); }
+
+  /* Search */
+  .search-wrap {
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .search-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+  }
+  .search-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px 10px 38px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text3); }
+
+  /* Log entries */
+  .log-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .log-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.1s;
+    position: relative;
+    overflow: hidden;
+  }
+  .log-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+  }
+  .log-card.checked-out::before { background: var(--green); }
+  .log-card.active::before { background: var(--accent2); }
+  .log-card:active { transform: scale(0.99); }
+
+  .log-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+  }
+  .log-driver {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+  .log-carrier {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 1px;
+  }
+  .log-status {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .status-in { background: rgba(240,165,0,0.15); color: var(--accent); border: 1px solid rgba(240,165,0,0.3); }
+  .status-out { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .status-pending { background: rgba(88,166,255,0.15); color: var(--blue); border: 1px solid rgba(88,166,255,0.3); }
+
+  .log-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+  .log-field { }
+  .log-field-label {
+    font-size: 9px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .log-field-value {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .log-field-value.accent { color: var(--accent); }
+  .log-field-value.green { color: var(--green); }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text2);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-title { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: var(--text); }
+  .empty-sub { font-size: 14px; margin-top: 4px; }
+
+  /* FAB */
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    background: var(--accent);
+    border: none;
+    border-radius: 50%;
+    color: #000;
+    font-size: 28px;
+    font-weight: 300;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(240,165,0,0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    z-index: 200;
+  }
+  .fab:active { transform: scale(0.93); }
+  .fab.open { background: var(--red); box-shadow: 0 4px 20px rgba(248,81,73,0.4); }
+
+  /* Modal / Drawer */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 300;
+    display: none;
+    align-items: flex-end;
+  }
+  .modal-overlay.visible { display: flex; }
+
+  .modal-drawer {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 16px 32px;
+    width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+    border-top: 2px solid var(--accent);
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .modal-handle {
+    width: 40px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  .modal-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    color: var(--accent);
+  }
+
+  /* Form */
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .form-row.full { grid-template-columns: 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-label {
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .form-label .req { color: var(--accent2); }
+  .form-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    -webkit-appearance: none;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-input::placeholder { color: var(--text3); }
+
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    color: #000;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: opacity 0.2s;
+  }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-submit.loading { opacity: 0.7; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 500;
+    pointer-events: none;
+  }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Detail modal */
+  .detail-section {
+    margin-bottom: 14px;
+  }
+  .detail-section-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+    font-weight: 600;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .detail-item {}
+  .detail-item-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+  }
+  .detail-item-val {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  .btn-checkout {
+    width: 100%;
+    padding: 13px;
+    background: transparent;
+    border: 2px solid var(--green);
+    border-radius: var(--radius);
+    color: var(--green);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s;
+  }
+  .btn-checkout:hover { background: rgba(63,185,80,0.1); }
+
+  /* Refresh btn */
+  .refresh-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text2);
+    font-size: 14px;
+    padding: 6px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Barlow', sans-serif;
+    transition: border-color 0.2s;
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .refresh-btn.spinning svg { animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .list-count {
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .section-hidden { display: none; }
+
+  /* Config section */
+  .config-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .config-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .config-note {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+  .config-note code {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 12px;
+    color: var(--accent);
+    font-family: monospace;
+    word-break: break-all;
+  }
+  .config-step {
+    display: flex;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .config-step:last-child { border-bottom: none; }
+  .config-num {
+    background: var(--accent);
+    color: #000;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-top">
+    <div class="header-logo">
+      <div class="header-icon">🚛</div>
+      <div>
+        <div class="header-title">Transport Log</div>
+        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v3</span></div>
+      </div>
+    </div>
+    <div class="header-date">
+      <strong id="todayStr">--</strong>
+      <span id="timeStr">--:--</span>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('log')">📋 Today's Log</button>
+    <button class="tab-btn" onclick="switchTab('setup')">⚙️ Setup</button>
+  </div>
+</div>
+
+<!-- Log Tab -->
+<div class="content" id="tab-log">
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-num" id="statTotal">0</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-num" id="statCheckedOut">0</div>
+      <div class="stat-label">Checked Out</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-num" id="statActive">0</div>
+      <div class="stat-label">On Site</div>
+    </div>
+  </div>
+
+  <!-- Search & Refresh -->
+  <div class="search-wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input class="search-input" type="search" placeholder="Search driver, carrier…" oninput="filterLog(this.value)" />
+  </div>
+
+  <div class="list-header">
+    <span class="list-count" id="listCount">Loading…</span>
+    <button class="refresh-btn" onclick="loadLog()" id="refreshBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
+  </div>
+
+  <div class="log-list" id="logList">
+    <div class="empty">
+      <div class="empty-icon">📡</div>
+      <div class="empty-title">Loading…</div>
+      <div class="empty-sub">Fetching log entries</div>
+    </div>
+  </div>
+</div>
+
+<!-- Setup Tab -->
+<div class="content section-hidden" id="tab-setup">
+  <div class="config-card">
+    <div class="config-title">🔗 Google Sheets Setup</div>
+    <p class="config-note">To enable read &amp; write access, you need to publish your Google Apps Script web app. Follow the steps below:</p>
+  </div>
+
+  <div class="config-card">
+    <div class="config-title">Step-by-Step Guide</div>
+    <div class="config-step">
+      <div class="config-num">1</div>
+      <div>Open your Google Sheet, go to <strong>Extensions → Apps Script</strong></div>
+    </div>
+    <div class="config-step">
+      <div class="config-num">2</div>
+      <div>Paste the Apps Script code (shown below) into the editor and save it</div>
+    </div>
+    <div class="config-step">
+      <div class="config-num">3</div>
+      <div>Click <strong>Deploy → New Deployment</strong>, choose <strong>Web App</strong>, set "Execute as: Me" and "Who has access: Anyone"</div>
+    </div>
+    <div class="config-step">
+      <div class="config-num">4</div>
+      <div>Copy the Web App URL and paste it below, then save</div>
+    </div>
+  </div>
+
+  <div class="config-card">
+    <div class="config-title">Apps Script Code</div>
+    <p class="config-note" style="margin-bottom:10px">Copy and paste this into your Apps Script editor:</p>
+    <textarea id="scriptCode" readonly style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--accent);font-family:monospace;font-size:11px;height:220px;resize:none;outline:none;line-height:1.5"></textarea>
+    <button onclick="copyScript()" style="margin-top:8px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:'Barlow',sans-serif;font-size:13px;cursor:pointer;width:100%">📋 Copy Script Code</button>
+  </div>
+
+  <div class="config-card">
+    <div class="config-title">Your Web App URL</div>
+    <div class="form-group">
+      <label class="form-label">Paste Web App URL here</label>
+      <input class="form-input" id="configUrl" type="url" placeholder="https://script.google.com/macros/s/…/exec" />
+    </div>
+    <button class="btn-submit" style="margin-top:12px" onclick="saveConfig()">💾 Save & Connect</button>
+  </div>
+
+  <div class="config-card" id="connectionStatus" style="display:none">
+    <div class="config-title" id="connStatusTitle">Connection Status</div>
+    <p class="config-note" id="connStatusMsg"></p>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="openCheckIn()">+</button>
+
+<!-- Check-In Drawer -->
+<div class="modal-overlay" id="checkInModal">
+  <div class="modal-drawer">
+    <div class="modal-handle"></div>
+    <div class="modal-title">➕ New Check-In</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Driver Name <span class="req">*</span></label>
+        <input class="form-input" id="f_driver" type="text" placeholder="Full name" autocomplete="name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lane #</label>
+        <input class="form-input" id="f_lane" type="number" placeholder="e.g. 1" min="1" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Carrier Name <span class="req">*</span></label>
+        <input class="form-input" id="f_carrier" type="text" placeholder="Company name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Carrier Phone</label>
+        <input class="form-input" id="f_phone" type="tel" placeholder="555-000-0000" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Time In</label>
+        <input class="form-input" id="f_timein" type="time" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Receiving Assoc.</label>
+        <input class="form-input" id="f_associate" type="text" placeholder="Name/initials" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Drop Off #</label>
+        <input class="form-input" id="f_dropoff" type="number" placeholder="0" min="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pickup #</label>
+        <input class="form-input" id="f_pickup" type="number" placeholder="0" min="0" />
+      </div>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="submitCheckIn()">✅ Submit Check-In</button>
+    <button onclick="closeCheckIn()" style="width:100%;padding:12px;background:none;border:none;color:var(--text2);font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;cursor:pointer;margin-top:8px;text-transform:uppercase">Cancel</button>
+  </div>
+</div>
+
+<!-- Detail Drawer -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-drawer" id="detailContent">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="detailName"></div>
+    <div id="detailBody"></div>
+    <button onclick="closeDetail()" style="width:100%;padding:12px;background:none;border:none;color:var(--text2);font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;cursor:pointer;margin-top:8px;text-transform:uppercase">Close</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Config ───────────────────────────────────────────────────
+const SHEET_ID = '10Ur-rkpsHkb8oaIKVVO1rDQQoFWaMco_Q21ZpP3Wq2k';
+const SHEET_NAME = 'Check-In';
+
+let webAppUrl = 'https://script.google.com/macros/s/AKfycbx5rRVcMJBFVsU6Zk311B3IK6K2xXoJfm0ED-jGVkT6fuaWw98kukXW0H1ZHSqHOwmeaA/exec';
+localStorage.setItem('transport_webapp_url', webAppUrl);
+let allEntries = [];
+let currentRow = null;
+
+// ─── Apps Script Code ─────────────────────────────────────────
+const SCRIPT_CODE = `function doGet(e) {
+  // Used for ping/health check only — reads happen via public CSV
+  return ContentService.createTextOutput(JSON.stringify({ ok: true }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Check-In') || ss.getActiveSheet();
+
+  // FormData comes through as e.parameter
+  const params = e.parameter || {};
+  const action = params.action;
+
+  if (action === 'append') {
+    let row = params.row;
+    if (typeof row === 'string') {
+      try { row = JSON.parse(row); } catch(err) { row = row.split(','); }
+    }
+    sheet.appendRow(row);
+    return ContentService.createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (action === 'update') {
+    const rowNum = parseInt(params.rowNum);
+    const col = parseInt(params.col);
+    const value = params.value;
+    sheet.getRange(rowNum, col).setValue(value);
+    return ContentService.createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  return ContentService.createTextOutput(JSON.stringify({ error: 'Unknown action: ' + action }))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+
+// ─── Init ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('scriptCode').value = SCRIPT_CODE;
+  if (webAppUrl) document.getElementById('configUrl').value = webAppUrl;
+  updateClock();
+  setInterval(updateClock, 1000);
+  loadLog();
+});
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('todayStr').textContent = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  document.getElementById('timeStr').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  
+  // Pre-fill time in check-in form
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  if (!document.getElementById('f_timein').value)
+    document.getElementById('f_timein').value = `${hh}:${mm}`;
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.remove('active'));
+  ['log','setup'].forEach(t => document.getElementById('tab-'+t).classList.add('section-hidden'));
+  
+  const idx = ['log','setup'].indexOf(tab);
+  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  document.getElementById('tab-'+tab).classList.remove('section-hidden');
+  
+  document.getElementById('fab').style.display = tab === 'log' ? 'flex' : 'none';
+}
+
+// ─── Load from Sheets (public CSV) or Web App ─────────────────
+async function loadLog() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  document.getElementById('listCount').textContent = 'Loading…';
+
+  try {
+    if (webAppUrl) {
+      await loadViaWebApp();
+    } else {
+      await loadViaPublicCsv();
+    }
+  } catch(err) {
+    showToast('Failed to load: ' + err.message, 'error');
+    document.getElementById('listCount').textContent = 'Load failed';
+  }
+  btn.classList.remove('spinning');
+}
+
+async function loadViaPublicCsv() {
+  // Use Google Visualization API with JSONP — works from any origin including file://
+  return new Promise((resolve, reject) => {
+    const cbName = '_gviz_' + Date.now();
+    const script = document.createElement('script');
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Sheet load timed out. Make sure the sheet is shared publicly (Anyone with link can view).'));
+    }, 12000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = function(response) {
+      cleanup();
+      try {
+        const table = response.table;
+        if (!table || !table.rows) { renderEmpty('No entries found'); resolve(); return; }
+
+        // Parse column headers from table.cols
+        // Row data from table.rows[].c[].v
+        allEntries = table.rows.map((row, i) => {
+          const c = row.c || [];
+          const val = (idx) => {
+            const cell = c[idx];
+            if (!cell || cell.v === null || cell.v === undefined) return '';
+            // Dates come as "Date(2026,2,16)" — convert to readable
+            if (typeof cell.v === 'string' && cell.v.startsWith('Date(')) {
+              const parts = cell.v.replace('Date(','').replace(')','').split(',').map(Number);
+              return (parts[1]+1) + '/' + parts[2] + '/' + parts[0];
+            }
+            // Times come as {v: fractional day} with formatted string in .f
+            if (cell.f) return cell.f;
+            return String(cell.v);
+          };
+          return {
+            rowNum: i + 2,
+            date: val(0), driver: val(1), lane: val(2), carrier: val(3),
+            phone: val(4), timeIn: val(5), dropOff: val(6), pickup: val(7),
+            associate: val(8), timeOut: val(9)
+          };
+        }).filter(e => e.driver && e.driver.trim());
+
+        renderLog(allEntries);
+        resolve();
+      } catch(err) {
+        reject(new Error('Failed to parse sheet data: ' + err.message));
+      }
+    };
+
+    script.onerror = () => { cleanup(); reject(new Error('Could not load sheet. Check sharing settings.')); };
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}&callback=${cbName}`;
+    script.src = url;
+    document.head.appendChild(script);
+  });
+}
+
+// Reads always use the public CSV — no auth needed
+async function loadViaWebApp() {
+  await loadViaPublicCsv();
+}
+
+// Writes use no-cors fetch — browser sends it, we can't read the response
+// but the Apps Script receives and processes it fine
+async function postToSheet(params) {
+  const form = new FormData();
+  Object.entries(params).forEach(([k,v]) => form.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v)));
+  await fetch(webAppUrl, { method: 'POST', mode: 'no-cors', body: form });
+  // no-cors means response is opaque — we assume success and wait briefly
+  await new Promise(r => setTimeout(r, 1800));
+}
+
+// Simple CSV parser
+function parseCSV(text) {
+  const lines = text.split('\n');
+  return lines.map(line => {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    cols.push(cur.trim());
+    return cols;
+  }).filter(r => r.length > 1);
+}
+
+// ─── Render ───────────────────────────────────────────────────
+function renderLog(entries) {
+  updateStats(entries);
+  const list = document.getElementById('logList');
+  document.getElementById('listCount').textContent = `${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}`;
+
+  if (!entries.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No Entries</div><div class="empty-sub">No check-ins found for today</div></div>`;
+    return;
+  }
+
+  list.innerHTML = entries.map(e => {
+    const isOut = e.timeOut && String(e.timeOut).trim() && String(e.timeOut).trim() !== '0';
+    const hasIn = e.timeIn && String(e.timeIn).trim();
+    const statusClass = isOut ? 'checked-out' : (hasIn ? 'active' : '');
+    const statusLabel = isOut ? '<span class="log-status status-out">✓ Out</span>' :
+                        (hasIn ? '<span class="log-status status-in">● On Site</span>' :
+                                 '<span class="log-status status-pending">⋯ Pending</span>');
+
+    const dropOff = e.dropOff && String(e.dropOff) !== '0' ? e.dropOff : '—';
+    const pickup = e.pickup && String(e.pickup) !== '0' ? e.pickup : '—';
+    const timeIn = e.timeIn && String(e.timeIn).trim() ? formatTime(e.timeIn) : '—';
+    const timeOut = isOut ? formatTime(e.timeOut) : '—';
+
+    return `<div class="log-card ${statusClass}" onclick="showDetail(${e.rowNum})">
+      <div class="log-card-top">
+        <div>
+          <div class="log-driver">${esc(e.driver)}</div>
+          <div class="log-carrier">${esc(e.carrier)}${e.lane ? ' · Lane ' + e.lane : ''}</div>
+        </div>
+        ${statusLabel}
+      </div>
+      <div class="log-grid">
+        <div class="log-field">
+          <div class="log-field-label">Time In</div>
+          <div class="log-field-value accent">${timeIn}</div>
+        </div>
+        <div class="log-field">
+          <div class="log-field-label">Drop Off</div>
+          <div class="log-field-value">${dropOff}</div>
+        </div>
+        <div class="log-field">
+          <div class="log-field-label">Pickup</div>
+          <div class="log-field-value">${pickup}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderEmpty(msg) {
+  allEntries = [];
+  updateStats([]);
+  document.getElementById('logList').innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">${msg}</div><div class="empty-sub">Tap + to add a new check-in</div></div>`;
+  document.getElementById('listCount').textContent = '0 entries';
+}
+
+function updateStats(entries) {
+  const total = entries.length;
+  const out = entries.filter(e => e.timeOut && String(e.timeOut).trim() && String(e.timeOut).trim() !== '0').length;
+  const active = total - out;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statCheckedOut').textContent = out;
+  document.getElementById('statActive').textContent = active;
+}
+
+function filterLog(q) {
+  q = q.toLowerCase();
+  const filtered = q ? allEntries.filter(e =>
+    (e.driver||'').toLowerCase().includes(q) ||
+    (e.carrier||'').toLowerCase().includes(q) ||
+    (e.associate||'').toLowerCase().includes(q) ||
+    String(e.lane||'').includes(q)
+  ) : allEntries;
+  renderLog(filtered);
+}
+
+// ─── Detail Drawer ────────────────────────────────────────────
+function showDetail(rowNum) {
+  const e = allEntries.find(x => x.rowNum === rowNum);
+  if (!e) return;
+  currentRow = e;
+
+  document.getElementById('detailName').textContent = '🚛 ' + e.driver;
+  const isOut = e.timeOut && String(e.timeOut).trim() && String(e.timeOut).trim() !== '0';
+
+  document.getElementById('detailBody').innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">Carrier Info</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-item-label">Carrier</div><div class="detail-item-val">${esc(e.carrier||'—')}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Phone</div><div class="detail-item-val">${esc(e.phone||'—')}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Lane #</div><div class="detail-item-val">${e.lane||'—'}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Date</div><div class="detail-item-val">${esc(formatDate(e.date)||'—')}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Activity</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-item-label">Time In</div><div class="detail-item-val" style="color:var(--accent)">${esc(formatTime(e.timeIn)||'—')}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Time Out</div><div class="detail-item-val" style="color:var(--green)">${isOut ? esc(formatTime(e.timeOut)) : '—'}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Drop Off</div><div class="detail-item-val">${(e.dropOff && e.dropOff != '0') ? e.dropOff : '—'}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Pickup</div><div class="detail-item-val">${(e.pickup && e.pickup != '0') ? e.pickup : '—'}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Associate</div><div class="detail-item-val">${esc(e.associate||'—')}</div></div>
+      </div>
+    </div>
+    ${!isOut && webAppUrl ? `<button class="btn-checkout" onclick="checkOut(${rowNum})">✓ Check Out Now</button>` : ''}
+    ${!webAppUrl ? `<p style="font-size:12px;color:var(--text3);text-align:center;margin-top:8px">Connect via Setup tab to enable check-out</p>` : ''}
+  `;
+
+  document.getElementById('detailModal').classList.add('visible');
+}
+
+function closeDetail() {
+  document.getElementById('detailModal').classList.remove('visible');
+  currentRow = null;
+}
+
+async function checkOut(rowNum) {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const timeOut = `${hh}:${mm}`;
+
+  try {
+    await postToSheet({ action: 'update', rowNum, col: 10, value: timeOut });
+    showToast('Checked out at ' + timeOut + ' ✅', 'success');
+    closeDetail();
+    await loadLog();
+  } catch(err) {
+    showToast('Checkout failed: ' + err.message, 'error');
+  }
+}
+
+// ─── Check-In Form ────────────────────────────────────────────
+function openCheckIn() {
+  // Reset form
+  ['f_driver','f_lane','f_carrier','f_phone','f_associate','f_dropoff','f_pickup'].forEach(id => document.getElementById(id).value = '');
+  const now = new Date();
+  document.getElementById('f_timein').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('checkInModal').classList.add('visible');
+  document.getElementById('fab').classList.add('open');
+  document.getElementById('fab').textContent = '×';
+  setTimeout(() => document.getElementById('f_driver').focus(), 400);
+}
+
+function closeCheckIn() {
+  document.getElementById('checkInModal').classList.remove('visible');
+  document.getElementById('fab').classList.remove('open');
+  document.getElementById('fab').textContent = '+';
+}
+
+async function submitCheckIn() {
+  const driver = document.getElementById('f_driver').value.trim();
+  const carrier = document.getElementById('f_carrier').value.trim();
+  if (!driver || !carrier) { showToast('Driver name & carrier are required', 'error'); return; }
+
+  const now = new Date();
+  const dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}`;
+  const row = [
+    dateStr,
+    driver,
+    document.getElementById('f_lane').value || '',
+    carrier,
+    document.getElementById('f_phone').value || '',
+    document.getElementById('f_timein').value || '',
+    document.getElementById('f_dropoff').value || '0',
+    document.getElementById('f_pickup').value || '0',
+    document.getElementById('f_associate').value || '',
+    ''
+  ];
+
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+
+  try {
+    await postToSheet({ action: 'append', row });
+    showToast('Check-in saved! ✅', 'success');
+    closeCheckIn();
+    await loadLog();
+  } catch(err) {
+    showToast('Error: ' + err.message, 'error');
+  } finally {
+    btn.textContent = '✅ Submit Check-In';
+    btn.disabled = false;
+  }
+}
+
+// ─── Config ───────────────────────────────────────────────────
+function saveConfig() {
+  const url = document.getElementById('configUrl').value.trim();
+  if (!url) { showToast('Please enter the Web App URL', 'error'); return; }
+  webAppUrl = url;
+  localStorage.setItem('transport_webapp_url', url);
+  showToast('URL saved! Testing connection…', 'success');
+  testConnection();
+}
+
+async function testConnection() {
+  const card = document.getElementById('connectionStatus');
+  card.style.display = 'block';
+  document.getElementById('connStatusTitle').textContent = 'Testing…';
+  document.getElementById('connStatusMsg').textContent = 'Connecting to Google Apps Script…';
+
+  try {
+    // Verify Web App URL is reachable via a no-cors ping
+    await fetch(webAppUrl + '?action=ping', { method: 'GET', mode: 'no-cors' });
+    // If we get here without throwing, the URL is reachable
+    document.getElementById('connStatusTitle').textContent = '✅ Connected!';
+    document.getElementById('connStatusMsg').textContent = 'Web App URL saved. Writes (check-in & check-out) will go to your Google Sheet. Data is read from the public sheet CSV.';
+    switchTab('log');
+    loadLog();
+  } catch(err) {
+    document.getElementById('connStatusTitle').textContent = '❌ Connection Failed';
+    document.getElementById('connStatusMsg').textContent = 'Could not reach that URL. Make sure it ends in /exec and was deployed with "Anyone" access.';
+  }
+}
+
+function copyScript() {
+  navigator.clipboard.writeText(SCRIPT_CODE).then(() => showToast('Script copied!', 'success'));
+}
+
+// ─── Helpers ──────────────────────────────────────────────────
+function formatTime(t) {
+  if (!t) return '';
+  t = String(t).trim();
+  if (!t || t === '0') return '';
+  // Already formatted like "6:30 AM" or "06:30"
+  if (t.includes('AM') || t.includes('PM')) return t.replace(':00 ', ' ');
+  if (t.includes(':')) {
+    const [h, m] = t.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hh = h % 12 || 12;
+    return `${hh}:${String(m).padStart(2,'0')} ${ampm}`;
+  }
+  return t;
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  return String(d).replace(/(\d+)\/(\d+)\/(\d+)/, (_, m, day, y) => {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${months[parseInt(m)-1]} ${parseInt(day)}, ${y}`;
+  });
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Close modals on overlay click
+document.getElementById('checkInModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCheckIn();
+});
+document.getElementById('detailModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDetail();
+});
+</script>
+</body>
+</html>
