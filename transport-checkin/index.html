@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Transport Check-In Log v11</title>
+<title>Transport Check-In Log v13</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -641,7 +641,7 @@
       <div class="header-icon">🚛</div>
       <div>
         <div class="header-title">Transport Log</div>
-        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v11</span></div>
+        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v13</span></div>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
@@ -772,8 +772,19 @@
         <input class="form-input" id="f_driver" type="text" placeholder="Full name" autocomplete="name" />
       </div>
       <div class="form-group">
-        <label class="form-label">Lane #</label>
+        <label class="form-label">Driver Phone</label>
+        <input class="form-input" id="f_driverphone" type="tel" placeholder="555-000-0000" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Lane No.</label>
         <input class="form-input" id="f_lane" type="number" placeholder="e.g. 1" min="1" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Receiving Assoc.</label>
+        <input class="form-input" id="f_associate" type="text" placeholder="Name/initials" />
       </div>
     </div>
 
@@ -790,23 +801,30 @@
 
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Time In</label>
-        <input class="form-input" id="f_timein" type="time" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Receiving Assoc.</label>
-        <input class="form-input" id="f_associate" type="text" placeholder="Name/initials" />
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
         <label class="form-label">Drop Off #</label>
         <input class="form-input" id="f_dropoff" type="number" placeholder="0" min="0" />
       </div>
       <div class="form-group">
         <label class="form-label">Pickup #</label>
         <input class="form-input" id="f_pickup" type="number" placeholder="0" min="0" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Time In</label>
+        <input class="form-input" id="f_timein" type="time" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Time Out</label>
+        <input class="form-input" id="f_timeout_checkin" type="time" />
+      </div>
+    </div>
+
+    <div class="form-row full">
+      <div class="form-group">
+        <label class="form-label">Comments</label>
+        <textarea class="form-input" id="f_comments" placeholder="Optional notes..." rows="2" style="resize:none;line-height:1.4"></textarea>
       </div>
     </div>
 
@@ -838,8 +856,19 @@
         <input class="form-input" id="e_driver" type="text" placeholder="Full name" />
       </div>
       <div class="form-group">
-        <label class="form-label">Lane #</label>
+        <label class="form-label">Driver Phone</label>
+        <input class="form-input" id="e_driverphone" type="tel" placeholder="555-000-0000" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Lane No.</label>
         <input class="form-input" id="e_lane" type="number" placeholder="e.g. 1" min="1" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Receiving Associate</label>
+        <input class="form-input" id="e_associate" type="text" placeholder="Name/initials" />
       </div>
     </div>
 
@@ -856,17 +885,6 @@
 
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Time In</label>
-        <input class="form-input" id="e_timein" type="time" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Time Out</label>
-        <input class="form-input" id="e_timeout" type="time" />
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
         <label class="form-label">Drop Off #</label>
         <input class="form-input" id="e_dropoff" type="number" placeholder="0" min="0" />
       </div>
@@ -876,10 +894,21 @@
       </div>
     </div>
 
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Time In</label>
+        <input class="form-input" id="e_timein" type="time" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Time Out</label>
+        <input class="form-input" id="e_timeout" type="time" />
+      </div>
+    </div>
+
     <div class="form-row full">
       <div class="form-group">
-        <label class="form-label">Receiving Associate</label>
-        <input class="form-input" id="e_associate" type="text" placeholder="Name/initials" />
+        <label class="form-label">Comments</label>
+        <textarea class="form-input" id="e_comments" placeholder="Optional notes..." rows="2" style="resize:none;line-height:1.4"></textarea>
       </div>
     </div>
 
@@ -980,10 +1009,10 @@ function exportCSV() {
   var timestamp = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
   var filename = 'transport-log_' + timestamp + '.csv';
 
-  var headers = ['Date','Driver Name','Lane #','Carrier Name','Carrier Phone','Time In','Drop Off','Pickup','Receiving Associate','Time Out'];
+  var headers = ['Date','Driver Name','Driver Phone','Carrier Name','Carrier Phone','Lane #','Drop Off','Pickup','Receiving Associate','Time In','Time Out','Comments'];
 
   var dataRows = allEntries.map(function(e) {
-    return [e.date, e.driver, e.lane, e.carrier, e.phone, e.timeIn, e.dropOff, e.pickup, e.associate, e.timeOut];
+    return [e.date, e.driver, e.driverPhone, e.carrier, e.phone, e.lane, e.dropOff, e.pickup, e.associate, e.timeIn, e.timeOut, e.comments];
   });
 
   var allRows = [headers].concat(dataRows);
@@ -1088,9 +1117,10 @@ async function loadViaPublicCsv() {
   }
   allEntries = rows.slice(1).map((r, i) => ({
     rowNum: i + 2,
-    date: r[0], driver: r[1], lane: r[2], carrier: r[3],
-    phone: r[4], timeIn: r[5], dropOff: r[6], pickup: r[7],
-    associate: r[8], timeOut: r[9]
+    date: r[0], driver: r[1], driverPhone: r[2],
+    carrier: r[3], phone: r[4], lane: r[5],
+    dropOff: r[6], pickup: r[7], associate: r[8],
+    timeIn: r[9], timeOut: r[10], comments: r[11]
   })).filter(e => e.driver && e.driver.trim());
   renderLog(allEntries);
 }
@@ -1215,12 +1245,18 @@ function showDetail(rowNum) {
 
   document.getElementById('detailBody').innerHTML = `
     <div class="detail-section">
+      <div class="detail-section-title">Driver Info</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-item-label">Driver Phone</div><div class="detail-item-val">${esc(e.driverPhone||'-')}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Lane No.</div><div class="detail-item-val">${e.lane||'-'}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Date</div><div class="detail-item-val">${esc(formatDate(e.date)||'-')}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
       <div class="detail-section-title">Carrier Info</div>
       <div class="detail-grid">
         <div class="detail-item"><div class="detail-item-label">Carrier</div><div class="detail-item-val">${esc(e.carrier||'-')}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Phone</div><div class="detail-item-val">${esc(e.phone||'-')}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Lane #</div><div class="detail-item-val">${e.lane||'-'}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Date</div><div class="detail-item-val">${esc(formatDate(e.date)||'-')}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Carrier Phone</div><div class="detail-item-val">${esc(e.phone||'-')}</div></div>
       </div>
     </div>
     <div class="detail-section">
@@ -1233,6 +1269,7 @@ function showDetail(rowNum) {
         <div class="detail-item"><div class="detail-item-label">Associate</div><div class="detail-item-val">${esc(e.associate||'-')}</div></div>
       </div>
     </div>
+    ${(e.comments && e.comments.trim()) ? '<div class="detail-section"><div class="detail-section-title">Comments</div><div style="font-size:15px;color:var(--text);line-height:1.5;padding:4px 0">' + esc(e.comments) + '</div></div>' : ''}
     <div class="detail-actions">
       <button class="btn-edit ${isOut ? 'full' : ''}" onclick="openEdit(${rowNum})">-- Edit Record</button>
       ${!isOut ? `<button class="btn-checkout" onclick="checkOut(${rowNum})">- Check Out</button>` : ''}
@@ -1258,14 +1295,16 @@ function openEdit(rowNum) {
   setTimeout(() => {
     // Populate edit form
     document.getElementById('e_driver').value = e.driver || '';
+    document.getElementById('e_driverphone').value = e.driverPhone || '';
     document.getElementById('e_lane').value = e.lane || '';
     document.getElementById('e_carrier').value = e.carrier || '';
     document.getElementById('e_phone').value = e.phone || '';
-    document.getElementById('e_timein').value = to24h(e.timeIn);
-    document.getElementById('e_timeout').value = to24h(e.timeOut);
     document.getElementById('e_dropoff').value = (e.dropOff && e.dropOff !== '0') ? e.dropOff : '';
     document.getElementById('e_pickup').value = (e.pickup && e.pickup !== '0') ? e.pickup : '';
     document.getElementById('e_associate').value = e.associate || '';
+    document.getElementById('e_timein').value = to24h(e.timeIn);
+    document.getElementById('e_timeout').value = to24h(e.timeOut);
+    document.getElementById('e_comments').value = e.comments || '';
     document.getElementById('editRowNum').value = rowNum;
     document.getElementById('editModal').classList.add('visible');
   }, 200);
@@ -1290,14 +1329,16 @@ async function submitEdit() {
   const updatedRow = [
     e.date,
     driver,
-    document.getElementById('e_lane').value || '',
+    document.getElementById('e_driverphone').value || '',
     carrier,
     document.getElementById('e_phone').value || '',
-    timeInRaw ? formatTime(timeInRaw) : '',
+    document.getElementById('e_lane').value || '',
     document.getElementById('e_dropoff').value || '0',
     document.getElementById('e_pickup').value || '0',
     document.getElementById('e_associate').value || '',
-    timeOutRaw ? formatTime(timeOutRaw) : ''
+    timeInRaw ? formatTime(timeInRaw) : '',
+    timeOutRaw ? formatTime(timeOutRaw) : '',
+    document.getElementById('e_comments').value || ''
   ];
 
   const btn = document.getElementById('editSubmitBtn');
@@ -1339,7 +1380,7 @@ async function checkOut(rowNum) {
   const timeOut = `${hh}:${mm}`;
 
   try {
-    await postToSheet({ action: 'update', rowNum, col: 10, value: timeOut });
+    await postToSheet({ action: 'update', rowNum, col: 11, value: timeOut });
     showToast('Checked out at ' + timeOut + ' -', 'success');
     closeDetail();
     await loadLog();
@@ -1351,7 +1392,7 @@ async function checkOut(rowNum) {
 // --- Check-In Form --------------------------------------------
 function openCheckIn() {
   // Reset form
-  ['f_driver','f_lane','f_carrier','f_phone','f_associate','f_dropoff','f_pickup'].forEach(id => document.getElementById(id).value = '');
+  ['f_driver','f_driverphone','f_lane','f_carrier','f_phone','f_associate','f_dropoff','f_pickup','f_comments','f_timeout_checkin'].forEach(id => document.getElementById(id).value = '');
   const now = new Date();
   document.getElementById('f_timein').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   document.getElementById('checkInModal').classList.add('visible');
@@ -1376,14 +1417,16 @@ async function submitCheckIn() {
   const row = [
     dateStr,
     driver,
-    document.getElementById('f_lane').value || '',
+    document.getElementById('f_driverphone').value || '',
     carrier,
     document.getElementById('f_phone').value || '',
-    document.getElementById('f_timein').value || '',
+    document.getElementById('f_lane').value || '',
     document.getElementById('f_dropoff').value || '0',
     document.getElementById('f_pickup').value || '0',
     document.getElementById('f_associate').value || '',
-    ''
+    document.getElementById('f_timein').value || '',
+    document.getElementById('f_timeout_checkin').value || '',
+    document.getElementById('f_comments').value || ''
   ];
 
   const btn = document.getElementById('submitBtn');
