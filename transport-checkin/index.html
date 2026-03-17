@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Transport Check-In Log v5</title>
+<title>Transport Check-In Log v6</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -570,7 +570,7 @@
       <div class="header-icon">🚛</div>
       <div>
         <div class="header-title">Transport Log</div>
-        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v5</span></div>
+        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v6</span></div>
       </div>
     </div>
     <div class="header-date">
@@ -820,19 +820,18 @@ let currentRow = null;
 
 // ─── Apps Script Code ─────────────────────────────────────────
 const SCRIPT_CODE = `function doGet(e) {
-  // Used for ping/health check only — reads happen via public CSV
-  return ContentService.createTextOutput(JSON.stringify({ ok: true }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Check-In') || ss.getActiveSheet();
-
-  // FormData comes through as e.parameter
   const params = e.parameter || {};
   const action = params.action;
 
+  // Ping / health check
+  if (!action || action === 'ping') {
+    return ContentService.createTextOutput(JSON.stringify({ ok: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // Append new row
   if (action === 'append') {
     let row = params.row;
     if (typeof row === 'string') {
@@ -843,6 +842,7 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  // Update a single cell (used for checkout)
   if (action === 'update') {
     const rowNum = parseInt(params.rowNum);
     const col = parseInt(params.col);
@@ -852,18 +852,23 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  // Update an entire row (used for edit)
   if (action === 'updateRow') {
     const rowNum = parseInt(params.rowNum);
     let row = params.row;
     if (typeof row === 'string') { try { row = JSON.parse(row); } catch(err) {} }
-    const range = sheet.getRange(rowNum, 1, 1, row.length);
-    range.setValues([row]);
+    sheet.getRange(rowNum, 1, 1, row.length).setValues([row]);
     return ContentService.createTextOutput(JSON.stringify({ success: true }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
   return ContentService.createTextOutput(JSON.stringify({ error: 'Unknown action: ' + action }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  // All writes now handled by doGet via URL params
+  return doGet(e);
 }`;
 
 // ─── Init ─────────────────────────────────────────────────────
@@ -943,14 +948,14 @@ async function loadViaWebApp() {
   await loadViaPublicCsv();
 }
 
-// Writes use no-cors fetch — browser sends it, we can't read the response
-// but the Apps Script receives and processes it fine
+// Writes via GET with URL params + no-cors (most reliable approach for Apps Script)
+// Apps Script doGet handles all mutations; no-cors prevents reading response but the request goes through
 async function postToSheet(params) {
-  const form = new FormData();
-  Object.entries(params).forEach(([k,v]) => form.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v)));
-  await fetch(webAppUrl, { method: 'POST', mode: 'no-cors', body: form });
-  // no-cors means response is opaque — we assume success and wait briefly
-  await new Promise(r => setTimeout(r, 1800));
+  const qs = Object.entries(params)
+    .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(typeof v === 'object' ? JSON.stringify(v) : String(v)))
+    .join('&');
+  await fetch(webAppUrl + '?' + qs, { method: 'GET', mode: 'no-cors' });
+  await new Promise(r => setTimeout(r, 2000));
 }
 
 // Simple CSV parser
