@@ -3,10 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Transport Check-In Log v6</title>
+<title>Transport Check-In Log v7</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
+    /* Light mode (default) */
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface2: #f0f2f5;
+    --surface3: #e4e6ea;
+    --border: #d0d4db;
+    --accent: #d4920a;
+    --accent2: #ff6b35;
+    --green: #1a7f3c;
+    --red: #cf2b2b;
+    --blue: #0969da;
+    --text: #1a1e27;
+    --text2: #57606a;
+    --text3: #8c959f;
+    --radius: 10px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.10);
+    --header-bg: linear-gradient(135deg, #1a2233 0%, #0d1117 100%);
+    --header-text: #ffffff;
+    --header-sub: #aab0bb;
+    --modal-bg: #ffffff;
+    --card-hover: #f8f9fb;
+  }
+
+  [data-theme="dark"] {
     --bg: #0d1117;
     --surface: #161b22;
     --surface2: #21262d;
@@ -20,11 +44,57 @@
     --text: #e6edf3;
     --text2: #8b949e;
     --text3: #6e7681;
-    --radius: 10px;
     --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --header-bg: linear-gradient(135deg, #1a2233 0%, #0d1117 100%);
+    --header-text: #ffffff;
+    --header-sub: #8b949e;
+    --modal-bg: #161b22;
+    --card-hover: #1c2128;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  /* Theme toggle */
+  .theme-toggle {
+    width: 44px; height: 26px;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 13px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.25s, border-color 0.25s;
+    flex-shrink: 0;
+  }
+  .theme-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--text2);
+    transition: transform 0.25s, background 0.25s;
+  }
+  [data-theme="dark"] .theme-toggle {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  [data-theme="dark"] .theme-toggle::after {
+    transform: translateX(18px);
+    background: #000;
+  }
+  .theme-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .theme-toggle-label {
+    font-size: 11px;
+    color: var(--header-sub);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    white-space: nowrap;
+  }
 
   body {
     background: var(--bg);
@@ -36,7 +106,7 @@
 
   /* Header */
   .header {
-    background: linear-gradient(135deg, #1a2233 0%, #0d1117 100%);
+    background: var(--header-bg);
     border-bottom: 2px solid var(--accent);
     padding: 16px 16px 12px;
     position: sticky;
@@ -68,10 +138,11 @@
     letter-spacing: 0.5px;
     text-transform: uppercase;
     line-height: 1;
+    color: var(--header-text);
   }
   .header-subtitle {
     font-size: 11px;
-    color: var(--text2);
+    color: var(--header-sub);
     font-weight: 400;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -79,7 +150,7 @@
   .header-date {
     text-align: right;
     font-size: 12px;
-    color: var(--text2);
+    color: var(--header-sub);
   }
   .header-date strong {
     display: block;
@@ -297,7 +368,7 @@
   .modal-overlay.visible { display: flex; }
 
   .modal-drawer {
-    background: var(--surface);
+    background: var(--modal-bg);
     border-radius: 20px 20px 0 0;
     padding: 20px 16px 32px;
     width: 100%;
@@ -570,12 +641,18 @@
       <div class="header-icon">🚛</div>
       <div>
         <div class="header-title">Transport Log</div>
-        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v6</span></div>
+        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v7</span></div>
       </div>
     </div>
-    <div class="header-date">
-      <strong id="todayStr">--</strong>
-      <span id="timeStr">--:--</span>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <div class="header-date">
+        <strong id="todayStr">--</strong>
+        <span id="timeStr" style="color:var(--header-sub)">--:--</span>
+      </div>
+      <div class="theme-toggle-wrap">
+        <span class="theme-toggle-label" id="themeLabel">☀️ Light</span>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle dark mode"></button>
+      </div>
     </div>
   </div>
   <div class="tabs">
@@ -875,10 +952,29 @@ function doPost(e) {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('scriptCode').value = SCRIPT_CODE;
   if (webAppUrl) document.getElementById('configUrl').value = webAppUrl;
+  // Restore saved theme
+  const savedTheme = localStorage.getItem('transport_theme') || 'light';
+  if (savedTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('themeLabel').textContent = '🌙 Dark';
+  }
   updateClock();
   setInterval(updateClock, 1000);
   loadLog();
 });
+
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (isDark) {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('transport_theme', 'light');
+    document.getElementById('themeLabel').textContent = '☀️ Light';
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('transport_theme', 'dark');
+    document.getElementById('themeLabel').textContent = '🌙 Dark';
+  }
+}
 
 function updateClock() {
   const now = new Date();
