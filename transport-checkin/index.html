@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Transport Check-In Log v4</title>
+<title>Transport Check-In Log v5</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -481,6 +481,34 @@
 
   .section-hidden { display: none; }
 
+  /* Edit / action buttons in detail drawer */
+  .detail-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .btn-edit {
+    padding: 13px;
+    background: transparent;
+    border: 2px solid var(--accent);
+    border-radius: var(--radius);
+    color: var(--accent);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-edit:hover { background: rgba(240,165,0,0.1); }
+  .btn-edit.full { grid-column: 1 / -1; }
+  .btn-checkout.half, .btn-edit.half { }
+
+  /* Edit form in drawer */
+  .edit-section { margin-top: 4px; }
+  .edit-section .form-row { margin-bottom: 8px; }
+
   /* Config section */
   .config-card {
     background: var(--surface);
@@ -542,7 +570,7 @@
       <div class="header-icon">🚛</div>
       <div>
         <div class="header-title">Transport Log</div>
-        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v4</span></div>
+        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v5</span></div>
       </div>
     </div>
     <div class="header-date">
@@ -714,6 +742,69 @@
   </div>
 </div>
 
+<!-- Edit Drawer -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-drawer">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ Edit Record</div>
+    <input type="hidden" id="editRowNum" />
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Driver Name <span class="req">*</span></label>
+        <input class="form-input" id="e_driver" type="text" placeholder="Full name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lane #</label>
+        <input class="form-input" id="e_lane" type="number" placeholder="e.g. 1" min="1" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Carrier Name <span class="req">*</span></label>
+        <input class="form-input" id="e_carrier" type="text" placeholder="Company name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Carrier Phone</label>
+        <input class="form-input" id="e_phone" type="tel" placeholder="555-000-0000" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Time In</label>
+        <input class="form-input" id="e_timein" type="time" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Time Out</label>
+        <input class="form-input" id="e_timeout" type="time" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Drop Off #</label>
+        <input class="form-input" id="e_dropoff" type="number" placeholder="0" min="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pickup #</label>
+        <input class="form-input" id="e_pickup" type="number" placeholder="0" min="0" />
+      </div>
+    </div>
+
+    <div class="form-row full">
+      <div class="form-group">
+        <label class="form-label">Receiving Associate</label>
+        <input class="form-input" id="e_associate" type="text" placeholder="Name/initials" />
+      </div>
+    </div>
+
+    <button class="btn-submit" id="editSubmitBtn" onclick="submitEdit()">💾 Save Changes</button>
+    <button onclick="closeEdit()" style="width:100%;padding:12px;background:none;border:none;color:var(--text2);font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;cursor:pointer;margin-top:8px;text-transform:uppercase">Cancel</button>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -757,6 +848,16 @@ function doPost(e) {
     const col = parseInt(params.col);
     const value = params.value;
     sheet.getRange(rowNum, col).setValue(value);
+    return ContentService.createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (action === 'updateRow') {
+    const rowNum = parseInt(params.rowNum);
+    let row = params.row;
+    if (typeof row === 'string') { try { row = JSON.parse(row); } catch(err) {} }
+    const range = sheet.getRange(rowNum, 1, 1, row.length);
+    range.setValues([row]);
     return ContentService.createTextOutput(JSON.stringify({ success: true }))
       .setMimeType(ContentService.MimeType.JSON);
   }
@@ -975,8 +1076,10 @@ function showDetail(rowNum) {
         <div class="detail-item"><div class="detail-item-label">Associate</div><div class="detail-item-val">${esc(e.associate||'—')}</div></div>
       </div>
     </div>
-    ${!isOut && webAppUrl ? `<button class="btn-checkout" onclick="checkOut(${rowNum})">✓ Check Out Now</button>` : ''}
-    ${!webAppUrl ? `<p style="font-size:12px;color:var(--text3);text-align:center;margin-top:8px">Connect via Setup tab to enable check-out</p>` : ''}
+    <div class="detail-actions">
+      <button class="btn-edit ${isOut ? 'full' : ''}" onclick="openEdit(${rowNum})">✏️ Edit Record</button>
+      ${!isOut ? `<button class="btn-checkout" onclick="checkOut(${rowNum})">✓ Check Out</button>` : ''}
+    </div>
   `;
 
   document.getElementById('detailModal').classList.add('visible');
@@ -985,6 +1088,91 @@ function showDetail(rowNum) {
 function closeDetail() {
   document.getElementById('detailModal').classList.remove('visible');
   currentRow = null;
+}
+
+// ─── Edit Record ─────────────────────────────────────────────
+function openEdit(rowNum) {
+  const e = allEntries.find(x => x.rowNum === rowNum);
+  if (!e) return;
+  currentRow = e;
+
+  // Close detail drawer and open edit drawer
+  closeDetail();
+  setTimeout(() => {
+    // Populate edit form
+    document.getElementById('e_driver').value = e.driver || '';
+    document.getElementById('e_lane').value = e.lane || '';
+    document.getElementById('e_carrier').value = e.carrier || '';
+    document.getElementById('e_phone').value = e.phone || '';
+    document.getElementById('e_timein').value = to24h(e.timeIn);
+    document.getElementById('e_timeout').value = to24h(e.timeOut);
+    document.getElementById('e_dropoff').value = (e.dropOff && e.dropOff !== '0') ? e.dropOff : '';
+    document.getElementById('e_pickup').value = (e.pickup && e.pickup !== '0') ? e.pickup : '';
+    document.getElementById('e_associate').value = e.associate || '';
+    document.getElementById('editRowNum').value = rowNum;
+    document.getElementById('editModal').classList.add('visible');
+  }, 200);
+}
+
+function closeEdit() {
+  document.getElementById('editModal').classList.remove('visible');
+}
+
+async function submitEdit() {
+  const rowNum = parseInt(document.getElementById('editRowNum').value);
+  const e = allEntries.find(x => x.rowNum === rowNum);
+  if (!e) return;
+
+  const driver = document.getElementById('e_driver').value.trim();
+  const carrier = document.getElementById('e_carrier').value.trim();
+  if (!driver || !carrier) { showToast('Driver & carrier are required', 'error'); return; }
+
+  const timeInRaw = document.getElementById('e_timein').value;
+  const timeOutRaw = document.getElementById('e_timeout').value;
+
+  const updatedRow = [
+    e.date,
+    driver,
+    document.getElementById('e_lane').value || '',
+    carrier,
+    document.getElementById('e_phone').value || '',
+    timeInRaw ? formatTime(timeInRaw) : '',
+    document.getElementById('e_dropoff').value || '0',
+    document.getElementById('e_pickup').value || '0',
+    document.getElementById('e_associate').value || '',
+    timeOutRaw ? formatTime(timeOutRaw) : ''
+  ];
+
+  const btn = document.getElementById('editSubmitBtn');
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+
+  try {
+    await postToSheet({ action: 'updateRow', rowNum, row: updatedRow });
+    showToast('Record updated ✅', 'success');
+    closeEdit();
+    await loadLog();
+  } catch(err) {
+    showToast('Error: ' + err.message, 'error');
+  } finally {
+    btn.textContent = '💾 Save Changes';
+    btn.disabled = false;
+  }
+}
+
+// Convert "6:30 AM" or "06:30" to "06:30" for <input type="time">
+function to24h(t) {
+  if (!t) return '';
+  t = String(t).trim();
+  if (!t || t === '0') return '';
+  if (t.includes('AM') || t.includes('PM')) {
+    const [time, meridiem] = t.split(' ');
+    let [h, m] = time.split(':').map(Number);
+    if (meridiem === 'PM' && h !== 12) h += 12;
+    if (meridiem === 'AM' && h === 12) h = 0;
+    return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  }
+  return t.length === 4 ? '0' + t : t; // ensure HH:MM
 }
 
 async function checkOut(rowNum) {
@@ -1134,6 +1322,9 @@ document.getElementById('checkInModal').addEventListener('click', function(e) {
 });
 document.getElementById('detailModal').addEventListener('click', function(e) {
   if (e.target === this) closeDetail();
+});
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEdit();
 });
 </script>
 </body>
