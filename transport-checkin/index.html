@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Transport Check-In Log v8</title>
+<title>Transport Check-In Log v11</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -641,7 +641,7 @@
       <div class="header-icon">🚛</div>
       <div>
         <div class="header-title">Transport Log</div>
-        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v8</span></div>
+        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v11</span></div>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
@@ -892,7 +892,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ─── Config ───────────────────────────────────────────────────
+// --- Config ---------------------------------------------------
 const SHEET_ID = '10Ur-rkpsHkb8oaIKVVO1rDQQoFWaMco_Q21ZpP3Wq2k';
 const SHEET_NAME = 'Check-In';
 
@@ -901,7 +901,7 @@ localStorage.setItem('transport_webapp_url', webAppUrl);
 let allEntries = [];
 let currentRow = null;
 
-// ─── Apps Script Code ─────────────────────────────────────────
+// --- Apps Script Code -----------------------------------------
 const SCRIPT_CODE = `function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Check-In') || ss.getActiveSheet();
@@ -954,7 +954,7 @@ function doPost(e) {
   return doGet(e);
 }`;
 
-// ─── Init ─────────────────────────────────────────────────────
+// --- Init -----------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('scriptCode').value = SCRIPT_CODE;
   if (webAppUrl) document.getElementById('configUrl').value = webAppUrl;
@@ -962,7 +962,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedTheme = localStorage.getItem('transport_theme') || 'light';
   if (savedTheme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
-    document.getElementById('themeLabel').textContent = '🌙 Dark';
+    document.getElementById('themeLabel').textContent = '- Dark';
   }
   updateClock();
   setInterval(updateClock, 1000);
@@ -975,46 +975,42 @@ function exportCSV() {
     return;
   }
 
-  const now = new Date();
-  const pad = n => String(n).padStart(2, '0');
-  const timestamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-  const filename = `transport-log_${timestamp}.csv`;
+  var now = new Date();
+  var pad = function(n) { return String(n).padStart(2, '0'); };
+  var timestamp = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
+  var filename = 'transport-log_' + timestamp + '.csv';
 
-  const headers = ['Date','Driver Name','Lane #','Carrier Name','Carrier Phone','Time In','Drop Off','Pickup','Receiving Associate','Time Out'];
+  var headers = ['Date','Driver Name','Lane #','Carrier Name','Carrier Phone','Time In','Drop Off','Pickup','Receiving Associate','Time Out'];
 
-  const csvRows = [
-    headers,
-    ...allEntries.map(e => [
-      e.date, e.driver, e.lane, e.carrier, e.phone,
-      e.timeIn, e.dropOff, e.pickup, e.associate, e.timeOut
-    ])
-  ].map(row =>
-    row.map(cell => {
-      const val = cell === undefined || cell === null ? '' : String(cell);
-      // Wrap in quotes if contains comma, quote, or newline
-      return val.includes(',') || val.includes('"') || val.includes('
-')
-        ? '"' + val.replace(/"/g, '""') + '"'
-        : val;
-    }).join(',')
-  ).join('
-');
+  var dataRows = allEntries.map(function(e) {
+    return [e.date, e.driver, e.lane, e.carrier, e.phone, e.timeIn, e.dropOff, e.pickup, e.associate, e.timeOut];
+  });
 
-  // Add export timestamp as first line comment
-  const exportedAt = now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const fullCsv = `# Transport Check-In Log — Exported: ${exportedAt}
-` + csvRows;
+  var allRows = [headers].concat(dataRows);
 
-  const blob = new Blob([fullCsv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  var csvLines = allRows.map(function(row) {
+    return row.map(function(cell) {
+      var val = (cell === undefined || cell === null) ? '' : String(cell);
+      if (val.indexOf(',') >= 0 || val.indexOf('"') >= 0) {
+        return '"' + val.split('"').join('""') + '"';
+      }
+      return val;
+    }).join(',');
+  });
+
+  var exportedAt = now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  var fullCsv = '# Transport Check-In Log - Exported: ' + exportedAt + '\r\n' + csvLines.join('\r\n');
+
+  var blob = new Blob([fullCsv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast(`Exported ${allEntries.length} entries ✅`, 'success');
+  showToast('Exported ' + allEntries.length + ' entries', 'success');
 }
 
 function toggleTheme() {
@@ -1022,11 +1018,11 @@ function toggleTheme() {
   if (isDark) {
     document.documentElement.removeAttribute('data-theme');
     localStorage.setItem('transport_theme', 'light');
-    document.getElementById('themeLabel').textContent = '☀️ Light';
+    document.getElementById('themeLabel').textContent = '-- Light';
   } else {
     document.documentElement.setAttribute('data-theme', 'dark');
     localStorage.setItem('transport_theme', 'dark');
-    document.getElementById('themeLabel').textContent = '🌙 Dark';
+    document.getElementById('themeLabel').textContent = '- Dark';
   }
 }
 
@@ -1042,7 +1038,7 @@ function updateClock() {
     document.getElementById('f_timein').value = `${hh}:${mm}`;
 }
 
-// ─── Tabs ─────────────────────────────────────────────────────
+// --- Tabs -----------------------------------------------------
 function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.remove('active'));
   ['log','setup'].forEach(t => document.getElementById('tab-'+t).classList.add('section-hidden'));
@@ -1054,11 +1050,11 @@ function switchTab(tab) {
   document.getElementById('fab').style.display = tab === 'log' ? 'flex' : 'none';
 }
 
-// ─── Load from Sheets (public CSV) or Web App ─────────────────
+// --- Load from Sheets (public CSV) or Web App -----------------
 async function loadLog() {
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('spinning');
-  document.getElementById('listCount').textContent = 'Loading…';
+  document.getElementById('listCount').textContent = 'Loading-';
 
   try {
     if (webAppUrl) {
@@ -1074,8 +1070,14 @@ async function loadLog() {
 }
 
 async function loadViaPublicCsv() {
-  // Fetch public CSV export — works on any hosted domain (Netlify, etc.)
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+  // Detect local file:// - CORS blocks Google Sheets fetch locally
+  if (window.location.protocol === 'file:') {
+    document.getElementById('logList').innerHTML = '<div class="empty"><div class="empty-icon">-</div><div class="empty-title">Open on Netlify</div><div class="empty-sub" style="color:var(--accent);font-size:15px;margin-top:8px">This app must be opened from your Netlify URL, not a local file. CORS policy blocks Google Sheets access from local files.</div></div>';
+    document.getElementById('listCount').textContent = 'Not available locally';
+    updateStats([]);
+    return;
+  }
+  const url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(SHEET_NAME);
   const res = await fetch(url);
   if (!res.ok) throw new Error('Could not reach sheet (status ' + res.status + '). Make sure the sheet is shared publicly.');
   const text = await res.text();
@@ -1093,7 +1095,7 @@ async function loadViaPublicCsv() {
   renderLog(allEntries);
 }
 
-// Reads always use the public CSV — no auth needed
+// Reads always use the public CSV - no auth needed
 async function loadViaWebApp() {
   await loadViaPublicCsv();
 }
@@ -1125,14 +1127,14 @@ function parseCSV(text) {
   }).filter(r => r.length > 1);
 }
 
-// ─── Render ───────────────────────────────────────────────────
+// --- Render ---------------------------------------------------
 function renderLog(entries) {
   updateStats(entries);
   const list = document.getElementById('logList');
   document.getElementById('listCount').textContent = `${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}`;
 
   if (!entries.length) {
-    list.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No Entries</div><div class="empty-sub">No check-ins found for today</div></div>`;
+    list.innerHTML = `<div class="empty"><div class="empty-icon">-</div><div class="empty-title">No Entries</div><div class="empty-sub">No check-ins found for today</div></div>`;
     return;
   }
 
@@ -1140,20 +1142,20 @@ function renderLog(entries) {
     const isOut = e.timeOut && String(e.timeOut).trim() && String(e.timeOut).trim() !== '0';
     const hasIn = e.timeIn && String(e.timeIn).trim();
     const statusClass = isOut ? 'checked-out' : (hasIn ? 'active' : '');
-    const statusLabel = isOut ? '<span class="log-status status-out">✓ Out</span>' :
-                        (hasIn ? '<span class="log-status status-in">● On Site</span>' :
-                                 '<span class="log-status status-pending">⋯ Pending</span>');
+    const statusLabel = isOut ? '<span class="log-status status-out">- Out</span>' :
+                        (hasIn ? '<span class="log-status status-in">- On Site</span>' :
+                                 '<span class="log-status status-pending">- Pending</span>');
 
-    const dropOff = e.dropOff && String(e.dropOff) !== '0' ? e.dropOff : '—';
-    const pickup = e.pickup && String(e.pickup) !== '0' ? e.pickup : '—';
-    const timeIn = e.timeIn && String(e.timeIn).trim() ? formatTime(e.timeIn) : '—';
-    const timeOut = isOut ? formatTime(e.timeOut) : '—';
+    const dropOff = e.dropOff && String(e.dropOff) !== '0' ? e.dropOff : '-';
+    const pickup = e.pickup && String(e.pickup) !== '0' ? e.pickup : '-';
+    const timeIn = e.timeIn && String(e.timeIn).trim() ? formatTime(e.timeIn) : '-';
+    const timeOut = isOut ? formatTime(e.timeOut) : '-';
 
     return `<div class="log-card ${statusClass}" onclick="showDetail(${e.rowNum})">
       <div class="log-card-top">
         <div>
           <div class="log-driver">${esc(e.driver)}</div>
-          <div class="log-carrier">${esc(e.carrier)}${e.lane ? ' · Lane ' + e.lane : ''}</div>
+          <div class="log-carrier">${esc(e.carrier)}${e.lane ? ' - Lane ' + e.lane : ''}</div>
         </div>
         ${statusLabel}
       </div>
@@ -1178,7 +1180,7 @@ function renderLog(entries) {
 function renderEmpty(msg) {
   allEntries = [];
   updateStats([]);
-  document.getElementById('logList').innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">${msg}</div><div class="empty-sub">Tap + to add a new check-in</div></div>`;
+  document.getElementById('logList').innerHTML = `<div class="empty"><div class="empty-icon">-</div><div class="empty-title">${msg}</div><div class="empty-sub">Tap + to add a new check-in</div></div>`;
   document.getElementById('listCount').textContent = '0 entries';
 }
 
@@ -1202,38 +1204,38 @@ function filterLog(q) {
   renderLog(filtered);
 }
 
-// ─── Detail Drawer ────────────────────────────────────────────
+// --- Detail Drawer --------------------------------------------
 function showDetail(rowNum) {
   const e = allEntries.find(x => x.rowNum === rowNum);
   if (!e) return;
   currentRow = e;
 
-  document.getElementById('detailName').textContent = '🚛 ' + e.driver;
+  document.getElementById('detailName').textContent = '- ' + e.driver;
   const isOut = e.timeOut && String(e.timeOut).trim() && String(e.timeOut).trim() !== '0';
 
   document.getElementById('detailBody').innerHTML = `
     <div class="detail-section">
       <div class="detail-section-title">Carrier Info</div>
       <div class="detail-grid">
-        <div class="detail-item"><div class="detail-item-label">Carrier</div><div class="detail-item-val">${esc(e.carrier||'—')}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Phone</div><div class="detail-item-val">${esc(e.phone||'—')}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Lane #</div><div class="detail-item-val">${e.lane||'—'}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Date</div><div class="detail-item-val">${esc(formatDate(e.date)||'—')}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Carrier</div><div class="detail-item-val">${esc(e.carrier||'-')}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Phone</div><div class="detail-item-val">${esc(e.phone||'-')}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Lane #</div><div class="detail-item-val">${e.lane||'-'}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Date</div><div class="detail-item-val">${esc(formatDate(e.date)||'-')}</div></div>
       </div>
     </div>
     <div class="detail-section">
       <div class="detail-section-title">Activity</div>
       <div class="detail-grid">
-        <div class="detail-item"><div class="detail-item-label">Time In</div><div class="detail-item-val" style="color:var(--accent)">${esc(formatTime(e.timeIn)||'—')}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Time Out</div><div class="detail-item-val" style="color:var(--green)">${isOut ? esc(formatTime(e.timeOut)) : '—'}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Drop Off</div><div class="detail-item-val">${(e.dropOff && e.dropOff != '0') ? e.dropOff : '—'}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Pickup</div><div class="detail-item-val">${(e.pickup && e.pickup != '0') ? e.pickup : '—'}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Associate</div><div class="detail-item-val">${esc(e.associate||'—')}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Time In</div><div class="detail-item-val" style="color:var(--accent)">${esc(formatTime(e.timeIn)||'-')}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Time Out</div><div class="detail-item-val" style="color:var(--green)">${isOut ? esc(formatTime(e.timeOut)) : '-'}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Drop Off</div><div class="detail-item-val">${(e.dropOff && e.dropOff != '0') ? e.dropOff : '-'}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Pickup</div><div class="detail-item-val">${(e.pickup && e.pickup != '0') ? e.pickup : '-'}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Associate</div><div class="detail-item-val">${esc(e.associate||'-')}</div></div>
       </div>
     </div>
     <div class="detail-actions">
-      <button class="btn-edit ${isOut ? 'full' : ''}" onclick="openEdit(${rowNum})">✏️ Edit Record</button>
-      ${!isOut ? `<button class="btn-checkout" onclick="checkOut(${rowNum})">✓ Check Out</button>` : ''}
+      <button class="btn-edit ${isOut ? 'full' : ''}" onclick="openEdit(${rowNum})">-- Edit Record</button>
+      ${!isOut ? `<button class="btn-checkout" onclick="checkOut(${rowNum})">- Check Out</button>` : ''}
     </div>
   `;
 
@@ -1245,7 +1247,7 @@ function closeDetail() {
   currentRow = null;
 }
 
-// ─── Edit Record ─────────────────────────────────────────────
+// --- Edit Record ---------------------------------------------
 function openEdit(rowNum) {
   const e = allEntries.find(x => x.rowNum === rowNum);
   if (!e) return;
@@ -1299,18 +1301,18 @@ async function submitEdit() {
   ];
 
   const btn = document.getElementById('editSubmitBtn');
-  btn.textContent = 'Saving…';
+  btn.textContent = 'Saving-';
   btn.disabled = true;
 
   try {
     await postToSheet({ action: 'updateRow', rowNum, row: updatedRow });
-    showToast('Record updated ✅', 'success');
+    showToast('Record updated -', 'success');
     closeEdit();
     await loadLog();
   } catch(err) {
     showToast('Error: ' + err.message, 'error');
   } finally {
-    btn.textContent = '💾 Save Changes';
+    btn.textContent = '- Save Changes';
     btn.disabled = false;
   }
 }
@@ -1338,7 +1340,7 @@ async function checkOut(rowNum) {
 
   try {
     await postToSheet({ action: 'update', rowNum, col: 10, value: timeOut });
-    showToast('Checked out at ' + timeOut + ' ✅', 'success');
+    showToast('Checked out at ' + timeOut + ' -', 'success');
     closeDetail();
     await loadLog();
   } catch(err) {
@@ -1346,7 +1348,7 @@ async function checkOut(rowNum) {
   }
 }
 
-// ─── Check-In Form ────────────────────────────────────────────
+// --- Check-In Form --------------------------------------------
 function openCheckIn() {
   // Reset form
   ['f_driver','f_lane','f_carrier','f_phone','f_associate','f_dropoff','f_pickup'].forEach(id => document.getElementById(id).value = '');
@@ -1354,7 +1356,7 @@ function openCheckIn() {
   document.getElementById('f_timein').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   document.getElementById('checkInModal').classList.add('visible');
   document.getElementById('fab').classList.add('open');
-  document.getElementById('fab').textContent = '×';
+  document.getElementById('fab').textContent = '-';
   setTimeout(() => document.getElementById('f_driver').focus(), 400);
 }
 
@@ -1385,48 +1387,48 @@ async function submitCheckIn() {
   ];
 
   const btn = document.getElementById('submitBtn');
-  btn.textContent = 'Saving…';
+  btn.textContent = 'Saving-';
   btn.disabled = true;
 
   try {
     await postToSheet({ action: 'append', row });
-    showToast('Check-in saved! ✅', 'success');
+    showToast('Check-in saved! -', 'success');
     closeCheckIn();
     await loadLog();
   } catch(err) {
     showToast('Error: ' + err.message, 'error');
   } finally {
-    btn.textContent = '✅ Submit Check-In';
+    btn.textContent = '- Submit Check-In';
     btn.disabled = false;
   }
 }
 
-// ─── Config ───────────────────────────────────────────────────
+// --- Config ---------------------------------------------------
 function saveConfig() {
   const url = document.getElementById('configUrl').value.trim();
   if (!url) { showToast('Please enter the Web App URL', 'error'); return; }
   webAppUrl = url;
   localStorage.setItem('transport_webapp_url', url);
-  showToast('URL saved! Testing connection…', 'success');
+  showToast('URL saved! Testing connection-', 'success');
   testConnection();
 }
 
 async function testConnection() {
   const card = document.getElementById('connectionStatus');
   card.style.display = 'block';
-  document.getElementById('connStatusTitle').textContent = 'Testing…';
-  document.getElementById('connStatusMsg').textContent = 'Connecting to Google Apps Script…';
+  document.getElementById('connStatusTitle').textContent = 'Testing-';
+  document.getElementById('connStatusMsg').textContent = 'Connecting to Google Apps Script-';
 
   try {
     // Verify Web App URL is reachable via a no-cors ping
     await fetch(webAppUrl + '?action=ping', { method: 'GET', mode: 'no-cors' });
     // If we get here without throwing, the URL is reachable
-    document.getElementById('connStatusTitle').textContent = '✅ Connected!';
+    document.getElementById('connStatusTitle').textContent = '- Connected!';
     document.getElementById('connStatusMsg').textContent = 'Web App URL saved. Writes (check-in & check-out) will go to your Google Sheet. Data is read from the public sheet CSV.';
     switchTab('log');
     loadLog();
   } catch(err) {
-    document.getElementById('connStatusTitle').textContent = '❌ Connection Failed';
+    document.getElementById('connStatusTitle').textContent = '- Connection Failed';
     document.getElementById('connStatusMsg').textContent = 'Could not reach that URL. Make sure it ends in /exec and was deployed with "Anyone" access.';
   }
 }
@@ -1435,7 +1437,7 @@ function copyScript() {
   navigator.clipboard.writeText(SCRIPT_CODE).then(() => showToast('Script copied!', 'success'));
 }
 
-// ─── Helpers ──────────────────────────────────────────────────
+// --- Helpers --------------------------------------------------
 function formatTime(t) {
   if (!t) return '';
   t = String(t).trim();
