@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Transport Check-In Log v3</title>
+<title>Transport Check-In Log v4</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -542,7 +542,7 @@
       <div class="header-icon">🚛</div>
       <div>
         <div class="header-title">Transport Log</div>
-        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v3</span></div>
+        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v4</span></div>
       </div>
     </div>
     <div class="header-date">
@@ -818,63 +818,23 @@ async function loadLog() {
 }
 
 async function loadViaPublicCsv() {
-  // Use Google Visualization API with JSONP — works from any origin including file://
-  return new Promise((resolve, reject) => {
-    const cbName = '_gviz_' + Date.now();
-    const script = document.createElement('script');
-    const timer = setTimeout(() => {
-      cleanup();
-      reject(new Error('Sheet load timed out. Make sure the sheet is shared publicly (Anyone with link can view).'));
-    }, 12000);
-
-    function cleanup() {
-      clearTimeout(timer);
-      delete window[cbName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-    }
-
-    window[cbName] = function(response) {
-      cleanup();
-      try {
-        const table = response.table;
-        if (!table || !table.rows) { renderEmpty('No entries found'); resolve(); return; }
-
-        // Parse column headers from table.cols
-        // Row data from table.rows[].c[].v
-        allEntries = table.rows.map((row, i) => {
-          const c = row.c || [];
-          const val = (idx) => {
-            const cell = c[idx];
-            if (!cell || cell.v === null || cell.v === undefined) return '';
-            // Dates come as "Date(2026,2,16)" — convert to readable
-            if (typeof cell.v === 'string' && cell.v.startsWith('Date(')) {
-              const parts = cell.v.replace('Date(','').replace(')','').split(',').map(Number);
-              return (parts[1]+1) + '/' + parts[2] + '/' + parts[0];
-            }
-            // Times come as {v: fractional day} with formatted string in .f
-            if (cell.f) return cell.f;
-            return String(cell.v);
-          };
-          return {
-            rowNum: i + 2,
-            date: val(0), driver: val(1), lane: val(2), carrier: val(3),
-            phone: val(4), timeIn: val(5), dropOff: val(6), pickup: val(7),
-            associate: val(8), timeOut: val(9)
-          };
-        }).filter(e => e.driver && e.driver.trim());
-
-        renderLog(allEntries);
-        resolve();
-      } catch(err) {
-        reject(new Error('Failed to parse sheet data: ' + err.message));
-      }
-    };
-
-    script.onerror = () => { cleanup(); reject(new Error('Could not load sheet. Check sharing settings.')); };
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}&callback=${cbName}`;
-    script.src = url;
-    document.head.appendChild(script);
-  });
+  // Fetch public CSV export — works on any hosted domain (Netlify, etc.)
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Could not reach sheet (status ' + res.status + '). Make sure the sheet is shared publicly.');
+  const text = await res.text();
+  const rows = parseCSV(text);
+  if (!rows || rows.length < 2) {
+    renderEmpty('No entries found');
+    return;
+  }
+  allEntries = rows.slice(1).map((r, i) => ({
+    rowNum: i + 2,
+    date: r[0], driver: r[1], lane: r[2], carrier: r[3],
+    phone: r[4], timeIn: r[5], dropOff: r[6], pickup: r[7],
+    associate: r[8], timeOut: r[9]
+  })).filter(e => e.driver && e.driver.trim());
+  renderLog(allEntries);
 }
 
 // Reads always use the public CSV — no auth needed
