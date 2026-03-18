@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Transport Check-In Log v14</title>
+<title>Transport Check-In Log v15</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -738,7 +738,7 @@
       <div class="header-icon">🚛</div>
       <div>
         <div class="header-title">Transport Log</div>
-        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v14</span></div>
+        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v15</span></div>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
@@ -1335,9 +1335,9 @@ function renderTable(entries) {
   var list = document.getElementById('logList');
   list.style.cssText = '';
 
-  var thead = '<thead><tr>' + TABLE_COLS.map(function(col, i) {
+  var thead = '<thead><tr>' + TABLE_COLS.map(function(col) {
     var cls = (sortCol === col.key) ? ('sort-' + sortDir) : '';
-    return '<th class="' + cls + '" onclick="sortTable('' + col.key + '')">' +
+    return '<th class="' + cls + '" data-key="' + col.key + '" onclick="handleThClick(this)">' +
       col.label + '<span class="sort-arrow"></span></th>';
   }).join('') + '</tr></thead>';
 
@@ -1368,6 +1368,11 @@ function renderTable(entries) {
   }).join('') + '</tbody>';
 
   list.innerHTML = '<div class="table-wrap"><table class="log-table">' + thead + tbody + '</table></div>';
+}
+
+function handleThClick(th) {
+  var key = th.getAttribute('data-key');
+  if (key) sortTable(key);
 }
 
 function sortTable(key) {
