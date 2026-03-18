@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Transport Check-In Log v13</title>
+<title>Transport Check-In Log v14</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -552,6 +552,103 @@
 
   .section-hidden { display: none; }
 
+  /* View toggle button */
+  .view-toggle-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text2);
+    font-size: 15px;
+    padding: 6px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Barlow', sans-serif;
+    transition: border-color 0.2s;
+    white-space: nowrap;
+  }
+  .view-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .view-toggle-btn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+
+  /* Table view */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  table.log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 700px;
+  }
+  .log-table th {
+    background: var(--surface2);
+    color: var(--text2);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 10px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .log-table th:hover { color: var(--accent); }
+  .sort-arrow {
+    display: inline-block;
+    margin-left: 4px;
+    opacity: 0.35;
+    font-size: 11px;
+    transition: opacity 0.15s;
+  }
+  .log-table th.sort-asc .sort-arrow::after { content: ' ▲'; opacity: 1; }
+  .log-table th.sort-desc .sort-arrow::after { content: ' ▼'; opacity: 1; }
+  .log-table th:not(.sort-asc):not(.sort-desc) .sort-arrow::after { content: ' ⇅'; }
+  .log-table th.sort-asc .sort-arrow,
+  .log-table th.sort-desc .sort-arrow { opacity: 1; color: var(--accent); }
+
+  .log-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+    white-space: nowrap;
+    font-size: 14px;
+  }
+  .log-table tr:last-child td { border-bottom: none; }
+  .log-table tr:hover td { background: var(--surface2); cursor: pointer; }
+  .log-table td.date-col {
+    font-size: 12px;
+    color: var(--text2);
+    font-weight: 600;
+  }
+  .log-table td.driver-col {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .log-table td.time-col { color: var(--accent); font-weight: 600; }
+  .log-table td.num-col { text-align: center; font-weight: 600; }
+  .tbl-status {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+
   /* Edit / action buttons in detail drawer */
   .detail-actions {
     display: grid;
@@ -641,7 +738,7 @@
       <div class="header-icon">🚛</div>
       <div>
         <div class="header-title">Transport Log</div>
-        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v13</span></div>
+        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v14</span></div>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
@@ -687,7 +784,15 @@
 
   <div class="list-header">
     <span class="list-count" id="listCount">Loading…</span>
-    <div style="display:flex;gap:8px;align-items:center">
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+      <button class="view-toggle-btn active" id="btnCardView" onclick="setView('card')" title="Card view">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Cards
+      </button>
+      <button class="view-toggle-btn" id="btnTableView" onclick="setView('table')" title="Table view">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        List
+      </button>
       <button class="refresh-btn" onclick="exportCSV()" id="exportBtn" title="Export to CSV">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export
@@ -928,6 +1033,9 @@ const SHEET_NAME = 'Check-In';
 let webAppUrl = 'https://script.google.com/macros/s/AKfycbx5rRVcMJBFVsU6Zk311B3IK6K2xXoJfm0ED-jGVkT6fuaWw98kukXW0H1ZHSqHOwmeaA/exec';
 localStorage.setItem('transport_webapp_url', webAppUrl);
 let allEntries = [];
+let currentView = 'card'; // 'card' or 'table'
+let sortCol = null;
+let sortDir = 'asc';
 let currentRow = null;
 
 // --- Apps Script Code -----------------------------------------
@@ -1161,50 +1269,136 @@ function parseCSV(text) {
 function renderLog(entries) {
   updateStats(entries);
   const list = document.getElementById('logList');
-  document.getElementById('listCount').textContent = `${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}`;
+  document.getElementById('listCount').textContent = entries.length + ' entr' + (entries.length === 1 ? 'y' : 'ies');
 
   if (!entries.length) {
-    list.innerHTML = `<div class="empty"><div class="empty-icon">-</div><div class="empty-title">No Entries</div><div class="empty-sub">No check-ins found for today</div></div>`;
+    list.innerHTML = '<div class="empty"><div class="empty-icon">-</div><div class="empty-title">No Entries</div><div class="empty-sub">No check-ins found</div></div>';
     return;
   }
 
-  list.innerHTML = entries.map(e => {
-    const isOut = e.timeOut && String(e.timeOut).trim() && String(e.timeOut).trim() !== '0';
-    const hasIn = e.timeIn && String(e.timeIn).trim();
-    const statusClass = isOut ? 'checked-out' : (hasIn ? 'active' : '');
-    const statusLabel = isOut ? '<span class="log-status status-out">- Out</span>' :
-                        (hasIn ? '<span class="log-status status-in">- On Site</span>' :
-                                 '<span class="log-status status-pending">- Pending</span>');
+  if (currentView === 'table') {
+    renderTable(entries);
+  } else {
+    renderCards(entries);
+  }
+}
 
-    const dropOff = e.dropOff && String(e.dropOff) !== '0' ? e.dropOff : '-';
-    const pickup = e.pickup && String(e.pickup) !== '0' ? e.pickup : '-';
-    const timeIn = e.timeIn && String(e.timeIn).trim() ? formatTime(e.timeIn) : '-';
-    const timeOut = isOut ? formatTime(e.timeOut) : '-';
+function renderCards(entries) {
+  const list = document.getElementById('logList');
+  list.style.overflowX = '';
+  list.innerHTML = entries.map(function(e) {
+    var isOut = e.timeOut && String(e.timeOut).trim() && String(e.timeOut).trim() !== '0';
+    var hasIn = e.timeIn && String(e.timeIn).trim();
+    var statusClass = isOut ? 'checked-out' : (hasIn ? 'active' : '');
+    var statusLabel = isOut ? '<span class="log-status status-out">- Out</span>' :
+                      (hasIn ? '<span class="log-status status-in">- On Site</span>' :
+                               '<span class="log-status status-pending">- Pending</span>');
+    var dropOff = e.dropOff && String(e.dropOff) !== '0' ? e.dropOff : '-';
+    var pickup = e.pickup && String(e.pickup) !== '0' ? e.pickup : '-';
+    var timeIn = e.timeIn && String(e.timeIn).trim() ? formatTime(e.timeIn) : '-';
+    var timeOut = isOut ? formatTime(e.timeOut) : '-';
+    var dateStr = formatDate(e.date) || '';
 
-    return `<div class="log-card ${statusClass}" onclick="showDetail(${e.rowNum})">
-      <div class="log-card-top">
-        <div>
-          <div class="log-driver">${esc(e.driver)}</div>
-          <div class="log-carrier">${esc(e.carrier)}${e.lane ? ' - Lane ' + e.lane : ''}</div>
-        </div>
-        ${statusLabel}
-      </div>
-      <div class="log-grid">
-        <div class="log-field">
-          <div class="log-field-label">Time In</div>
-          <div class="log-field-value accent">${timeIn}</div>
-        </div>
-        <div class="log-field">
-          <div class="log-field-label">Drop Off</div>
-          <div class="log-field-value">${dropOff}</div>
-        </div>
-        <div class="log-field">
-          <div class="log-field-label">Pickup</div>
-          <div class="log-field-value">${pickup}</div>
-        </div>
-      </div>
-    </div>`;
+    return '<div class="log-card ' + statusClass + '" onclick="showDetail(' + e.rowNum + ')">' +
+      '<div class="log-card-top">' +
+        '<div>' +
+          '<div class="log-driver">' + esc(e.driver) + '</div>' +
+          '<div class="log-carrier">' + esc(e.carrier) + (e.lane ? ' - Lane ' + e.lane : '') + '</div>' +
+        '</div>' +
+        statusLabel +
+      '</div>' +
+      (dateStr ? '<div style="font-size:12px;color:var(--text3);margin-bottom:6px;font-weight:600">' + esc(dateStr) + '</div>' : '') +
+      '<div class="log-grid">' +
+        '<div class="log-field"><div class="log-field-label">Time In</div><div class="log-field-value accent">' + timeIn + '</div></div>' +
+        '<div class="log-field"><div class="log-field-label">Drop Off</div><div class="log-field-value">' + dropOff + '</div></div>' +
+        '<div class="log-field"><div class="log-field-label">Pickup</div><div class="log-field-value">' + pickup + '</div></div>' +
+      '</div>' +
+    '</div>';
   }).join('');
+}
+
+// Table columns definition
+var TABLE_COLS = [
+  { key: 'date',        label: 'Date',       cls: 'date-col' },
+  { key: 'driver',      label: 'Driver',     cls: 'driver-col' },
+  { key: 'carrier',     label: 'Carrier',    cls: '' },
+  { key: 'lane',        label: 'Lane',       cls: 'num-col' },
+  { key: 'timeIn',      label: 'Time In',    cls: 'time-col' },
+  { key: 'timeOut',     label: 'Time Out',   cls: '' },
+  { key: 'dropOff',     label: 'Drop Off',   cls: 'num-col' },
+  { key: 'pickup',      label: 'Pickup',     cls: 'num-col' },
+  { key: 'associate',   label: 'Associate',  cls: '' },
+  { key: 'status',      label: 'Status',     cls: '' }
+];
+
+function renderTable(entries) {
+  var list = document.getElementById('logList');
+  list.style.cssText = '';
+
+  var thead = '<thead><tr>' + TABLE_COLS.map(function(col, i) {
+    var cls = (sortCol === col.key) ? ('sort-' + sortDir) : '';
+    return '<th class="' + cls + '" onclick="sortTable('' + col.key + '')">' +
+      col.label + '<span class="sort-arrow"></span></th>';
+  }).join('') + '</tr></thead>';
+
+  var tbody = '<tbody>' + entries.map(function(e) {
+    var isOut = e.timeOut && String(e.timeOut).trim() && String(e.timeOut).trim() !== '0';
+    var hasIn = e.timeIn && String(e.timeIn).trim();
+    var statusBadge = isOut
+      ? '<span class="tbl-status status-out">Out</span>'
+      : (hasIn ? '<span class="tbl-status status-in">On Site</span>'
+               : '<span class="tbl-status status-pending">Pending</span>');
+    var cells = [
+      esc(formatDate(e.date) || '-'),
+      esc(e.driver || '-'),
+      esc(e.carrier || '-'),
+      esc(e.lane || '-'),
+      esc(formatTime(e.timeIn) || '-'),
+      isOut ? esc(formatTime(e.timeOut)) : '-',
+      (e.dropOff && e.dropOff !== '0') ? e.dropOff : '-',
+      (e.pickup && e.pickup !== '0') ? e.pickup : '-',
+      esc(e.associate || '-'),
+      statusBadge
+    ];
+    return '<tr onclick="showDetail(' + e.rowNum + ')">' +
+      cells.map(function(cell, i) {
+        return '<td class="' + (TABLE_COLS[i].cls || '') + '">' + cell + '</td>';
+      }).join('') +
+    '</tr>';
+  }).join('') + '</tbody>';
+
+  list.innerHTML = '<div class="table-wrap"><table class="log-table">' + thead + tbody + '</table></div>';
+}
+
+function sortTable(key) {
+  if (sortCol === key) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortCol = key;
+    sortDir = 'asc';
+  }
+  var sorted = allEntries.slice().sort(function(a, b) {
+    var av = String(a[key] || '').toLowerCase();
+    var bv = String(b[key] || '').toLowerCase();
+    // Numeric sort for numbers
+    if (key === 'dropOff' || key === 'pickup' || key === 'lane') {
+      av = parseFloat(av) || 0;
+      bv = parseFloat(bv) || 0;
+      return sortDir === 'asc' ? av - bv : bv - av;
+    }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  renderTable(sorted);
+}
+
+function setView(view) {
+  currentView = view;
+  document.getElementById('btnCardView').classList.toggle('active', view === 'card');
+  document.getElementById('btnTableView').classList.toggle('active', view === 'table');
+  var q = document.querySelector('.search-input') ? document.querySelector('.search-input').value : '';
+  filterLog(q);
 }
 
 function renderEmpty(msg) {
@@ -1261,6 +1455,13 @@ function showDetail(rowNum) {
     </div>
     <div class="detail-section">
       <div class="detail-section-title">Activity</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">&#128197;</span>
+        <div>
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Arrival Date</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text)">${esc(formatDate(e.date)||'-')}</div>
+        </div>
+      </div>
       <div class="detail-grid">
         <div class="detail-item"><div class="detail-item-label">Time In</div><div class="detail-item-val" style="color:var(--accent)">${esc(formatTime(e.timeIn)||'-')}</div></div>
         <div class="detail-item"><div class="detail-item-label">Time Out</div><div class="detail-item-val" style="color:var(--green)">${isOut ? esc(formatTime(e.timeOut)) : '-'}</div></div>
