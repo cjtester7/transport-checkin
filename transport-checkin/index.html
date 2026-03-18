@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Transport Check-In Log v16</title>
+<title>Transport Check-In Log v17</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -859,7 +859,7 @@
       <div class="header-icon">🚛</div>
       <div>
         <div class="header-title">Transport Log</div>
-        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v16</span></div>
+        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v17</span></div>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
@@ -1008,7 +1008,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Driver Phone</label>
-        <input class="form-input" id="f_driverphone" type="tel" placeholder="555-000-0000" />
+        <input class="form-input" id="f_driverphone" type="tel" placeholder="555-000-0000" oninput="autoPhone(this)" />
       </div>
     </div>
 
@@ -1030,7 +1030,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Carrier Phone</label>
-        <input class="form-input" id="f_phone" type="tel" placeholder="555-000-0000" />
+        <input class="form-input" id="f_phone" type="tel" placeholder="555-000-0000" oninput="autoPhone(this)" />
       </div>
     </div>
 
@@ -1092,7 +1092,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Driver Phone</label>
-        <input class="form-input" id="e_driverphone" type="tel" placeholder="555-000-0000" />
+        <input class="form-input" id="e_driverphone" type="tel" placeholder="555-000-0000" oninput="autoPhone(this)" />
       </div>
     </div>
 
@@ -1114,7 +1114,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Carrier Phone</label>
-        <input class="form-input" id="e_phone" type="tel" placeholder="555-000-0000" />
+        <input class="form-input" id="e_phone" type="tel" placeholder="555-000-0000" oninput="autoPhone(this)" />
       </div>
     </div>
 
@@ -1638,7 +1638,7 @@ function showDetail(rowNum) {
     <div class="detail-section">
       <div class="detail-section-title">Driver Info</div>
       <div class="detail-grid">
-        <div class="detail-item"><div class="detail-item-label">Driver Phone</div><div class="detail-item-val">${esc(e.driverPhone||'-')}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Driver Phone</div><div class="detail-item-val">${formatPhone(e.driverPhone)}</div></div>
         <div class="detail-item"><div class="detail-item-label">Lane No.</div><div class="detail-item-val">${e.lane||'-'}</div></div>
         <div class="detail-item"><div class="detail-item-label">Date</div><div class="detail-item-val">${esc(formatDate(e.date)||'-')}</div></div>
       </div>
@@ -1647,7 +1647,7 @@ function showDetail(rowNum) {
       <div class="detail-section-title">Carrier Info</div>
       <div class="detail-grid">
         <div class="detail-item"><div class="detail-item-label">Carrier</div><div class="detail-item-val">${esc(e.carrier||'-')}</div></div>
-        <div class="detail-item"><div class="detail-item-label">Carrier Phone</div><div class="detail-item-val">${esc(e.phone||'-')}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Carrier Phone</div><div class="detail-item-val">${formatPhone(e.phone)}</div></div>
       </div>
     </div>
     <div class="detail-section">
@@ -1693,10 +1693,10 @@ function openEdit(rowNum) {
   setTimeout(() => {
     // Populate edit form
     document.getElementById('e_driver').value = e.driver || '';
-    document.getElementById('e_driverphone').value = e.driverPhone || '';
+    document.getElementById('e_driverphone').value = formatPhone(e.driverPhone) !== '-' ? formatPhone(e.driverPhone) : '';
     document.getElementById('e_lane').value = e.lane || '';
     document.getElementById('e_carrier').value = e.carrier || '';
-    document.getElementById('e_phone').value = e.phone || '';
+    document.getElementById('e_phone').value = formatPhone(e.phone) !== '-' ? formatPhone(e.phone) : '';
     document.getElementById('e_dropoff').value = (e.dropOff && e.dropOff !== '0') ? e.dropOff : '';
     document.getElementById('e_pickup').value = (e.pickup && e.pickup !== '0') ? e.pickup : '';
     document.getElementById('e_associate').value = e.associate || '';
@@ -1900,6 +1900,30 @@ function formatDate(d) {
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return `${months[parseInt(m)-1]} ${parseInt(day)}, ${y}`;
   });
+}
+
+function formatPhone(p) {
+  if (!p) return '-';
+  var digits = String(p).replace(/\D/g, '');
+  if (digits.length === 10) {
+    return digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
+  }
+  if (digits.length === 11 && digits[0] === '1') {
+    return digits.slice(1,4) + '-' + digits.slice(4,7) + '-' + digits.slice(7);
+  }
+  return p || '-';
+}
+
+function autoPhone(input) {
+  // Live formatting as user types: inserts dashes at positions 3 and 7
+  var digits = input.value.replace(/\D/g, '').slice(0, 10);
+  var formatted = digits;
+  if (digits.length > 6) {
+    formatted = digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
+  } else if (digits.length > 3) {
+    formatted = digits.slice(0,3) + '-' + digits.slice(3);
+  }
+  input.value = formatted;
 }
 
 function esc(s) {
