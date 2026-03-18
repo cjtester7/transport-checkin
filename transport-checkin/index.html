@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Transport Check-In Log v15</title>
+<title>Transport Check-In Log v16</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -552,6 +552,103 @@
 
   .section-hidden { display: none; }
 
+  /* Login screen */
+  .login-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .login-overlay.hidden { display: none; }
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: var(--shadow);
+  }
+  .login-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .login-logo-icon {
+    width: 48px; height: 48px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .login-logo-text {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .login-logo-sub {
+    font-size: 12px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .login-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+  .login-error {
+    background: rgba(207,43,43,0.1);
+    border: 1px solid rgba(207,43,43,0.3);
+    color: var(--red);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .login-error.show { display: block; }
+
+  /* Logout button in header */
+  .logout-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.7);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .logout-btn:hover { border-color: rgba(255,255,255,0.6); color: #fff; }
+  .user-badge {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    font-family: 'Barlow Condensed', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
   /* View toggle button */
   .view-toggle-btn {
     background: var(--surface2);
@@ -731,6 +828,30 @@
 </head>
 <body>
 
+<!-- Login Overlay -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">🚛</div>
+      <div>
+        <div class="login-logo-text">Transport Log</div>
+        <div class="login-logo-sub">Check-In System</div>
+      </div>
+    </div>
+    <div class="login-title">Sign In</div>
+    <div class="login-error" id="loginError">Incorrect username or password.</div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="form-label">Username</label>
+      <input class="form-input" id="loginUser" type="text" placeholder="Enter username" autocapitalize="none" autocomplete="username" />
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label class="form-label">Password</label>
+      <input class="form-input" id="loginPass" type="password" placeholder="Enter password" autocomplete="current-password" />
+    </div>
+    <button class="btn-submit" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
 <!-- Header -->
 <div class="header">
   <div class="header-top">
@@ -738,7 +859,7 @@
       <div class="header-icon">🚛</div>
       <div>
         <div class="header-title">Transport Log</div>
-        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v15</span></div>
+        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v16</span></div>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
@@ -752,9 +873,18 @@
       </div>
     </div>
   </div>
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('log')">📋 Today's Log</button>
-    <button class="tab-btn" onclick="switchTab('setup')">⚙️ Setup</button>
+  <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+    <div class="tabs" style="flex:1">
+      <button class="tab-btn active" id="tabLogBtn" onclick="switchTab('log')">📋 Log</button>
+      <button class="tab-btn" id="tabSetupBtn" onclick="switchTab('setup')">⚙️ Setup</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+      <span class="user-badge" id="userBadge"></span>
+      <button class="logout-btn" onclick="doLogout()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Out
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1092,18 +1222,79 @@ function doPost(e) {
 }`;
 
 // --- Init -----------------------------------------------------
-document.addEventListener('DOMContentLoaded', () => {
+// --- Auth --------------------------------------------------
+var ACCOUNTS = {
+  'admin': { password: '1234',  role: 'admin' },
+  'user1': { password: 'user1', role: 'user'  }
+};
+var currentUser = null;
+
+function doLogin() {
+  var user = document.getElementById('loginUser').value.trim().toLowerCase();
+  var pass = document.getElementById('loginPass').value;
+  var err  = document.getElementById('loginError');
+  if (ACCOUNTS[user] && ACCOUNTS[user].password === pass) {
+    currentUser = { name: user, role: ACCOUNTS[user].role };
+    sessionStorage.setItem('transport_user', JSON.stringify(currentUser));
+    err.classList.remove('show');
+    applySession();
+    loadLog();
+  } else {
+    err.classList.add('show');
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginPass').focus();
+  }
+}
+
+function doLogout() {
+  currentUser = null;
+  sessionStorage.removeItem('transport_user');
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').classList.remove('show');
+  switchTab('log');
+}
+
+function applySession() {
+  document.getElementById('loginOverlay').classList.add('hidden');
+  var setupBtn = document.getElementById('tabSetupBtn');
+  if (currentUser.role === 'admin') {
+    setupBtn.style.display = '';
+  } else {
+    setupBtn.style.display = 'none';
+    switchTab('log');
+  }
+  var names = { 'admin': 'Admin', 'user1': 'User1' };
+  document.getElementById('userBadge').textContent = names[currentUser.name] || currentUser.name;
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !document.getElementById('loginOverlay').classList.contains('hidden')) {
+    doLogin();
+  }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('scriptCode').value = SCRIPT_CODE;
   if (webAppUrl) document.getElementById('configUrl').value = webAppUrl;
-  // Restore saved theme
-  const savedTheme = localStorage.getItem('transport_theme') || 'light';
+  var savedTheme = localStorage.getItem('transport_theme') || 'light';
   if (savedTheme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
     document.getElementById('themeLabel').textContent = '- Dark';
   }
   updateClock();
   setInterval(updateClock, 1000);
-  loadLog();
+  var saved = sessionStorage.getItem('transport_user');
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      applySession();
+      loadLog();
+    } catch(err) {
+      sessionStorage.removeItem('transport_user');
+    }
+  }
 });
 
 function exportCSV() {
@@ -1177,18 +1368,19 @@ function updateClock() {
 
 // --- Tabs -----------------------------------------------------
 function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.remove('active'));
-  ['log','setup'].forEach(t => document.getElementById('tab-'+t).classList.add('section-hidden'));
-  
-  const idx = ['log','setup'].indexOf(tab);
-  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  // Block non-admins from setup tab
+  if (tab === 'setup' && currentUser && currentUser.role !== 'admin') return;
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  ['log','setup'].forEach(function(t) { document.getElementById('tab-'+t).classList.add('section-hidden'); });
+  var tabBtns = { log: document.getElementById('tabLogBtn'), setup: document.getElementById('tabSetupBtn') };
+  if (tabBtns[tab]) tabBtns[tab].classList.add('active');
   document.getElementById('tab-'+tab).classList.remove('section-hidden');
-  
   document.getElementById('fab').style.display = tab === 'log' ? 'flex' : 'none';
 }
 
 // --- Load from Sheets (public CSV) or Web App -----------------
 async function loadLog() {
+  if (!currentUser) return;
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('spinning');
   document.getElementById('listCount').textContent = 'Loading-';
