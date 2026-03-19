@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Driver Check-In</title>
+<title>Driver Check-In v4</title>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -322,7 +322,7 @@
     <div class="header-icon-wrap">🚛</div>
     <div class="header-text">
       <div class="header-title">Driver Check-In</div>
-      <div class="header-sub">Please complete all required fields</div>
+      <div class="header-sub">Please complete all required fields &nbsp;|&nbsp; v4</div>
     </div>
   </div>
 </div>
@@ -391,6 +391,11 @@
     <div class="success-title">You're Checked In!</div>
     <div class="success-sub">Your check-in has been recorded.</div>
     <div class="success-time" id="successTime"></div>
+    <div style="background:#0a0a0a;border-radius:12px;padding:20px;margin:16px 0 8px">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#FFD000;margin-bottom:8px">Your Check-Out PIN</div>
+      <div id="pinDisplay" style="font-family:'Black Han Sans',sans-serif;font-size:56px;color:#FFD000;letter-spacing:12px;line-height:1"></div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:8px">Remember this number &mdash; you will need it to check out</div>
+    </div>
     <button class="btn-again" onclick="resetForm()">New Check-In</button>
   </div>
 
@@ -442,6 +447,14 @@ function nowDisplay() {
   return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + '  |  ' + h + ':' + pad(m) + ' ' + ampm;
 }
 
+function generatePIN() {
+  var digits = '';
+  for (var i = 0; i < 4; i++) {
+    digits += String(Math.floor(Math.random() * 10));
+  }
+  return digits;
+}
+
 async function submitForm() {
   var driver = document.getElementById('d_driver').value.trim();
   var driverPhone = document.getElementById('d_driverphone').value.trim();
@@ -458,7 +471,8 @@ async function submitForm() {
   btn.disabled = true;
   btn.innerHTML = 'Submitting...';
 
-  // Row order: Date, Driver, DriverPhone, Carrier, CarrierPhone, Lane, DropOff, Pickup, Associate, TimeIn, TimeOut, Comments
+  // Row order: Date, Driver, DriverPhone, Carrier, CarrierPhone, Lane, DropOff, Pickup, Associate, TimeIn, TimeOut, Comments, PIN
+  var pin = generatePIN();
   var row = [
     nowDate(),
     driver,
@@ -471,7 +485,8 @@ async function submitForm() {
     '',
     nowTime(),
     '',
-    ''
+    '',
+    pin
   ];
 
   var qs = 'action=append&row=' + encodeURIComponent(JSON.stringify(row));
@@ -485,6 +500,7 @@ async function submitForm() {
     var ss = document.getElementById('successScreen');
     ss.classList.add('visible');
     document.getElementById('successTime').textContent = nowDisplay();
+    document.getElementById('pinDisplay').textContent = pin;
   } catch(err) {
     showToast('Submission failed. Please try again.');
     btn.disabled = false;

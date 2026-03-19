@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Driver Check-Out</title>
+<title>Driver Check-Out v5</title>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -275,7 +275,7 @@
     <div class="header-icon-wrap">🚛</div>
     <div>
       <div class="header-title">Driver Check-Out</div>
-      <div class="header-sub">Enter your details to check out</div>
+      <div class="header-sub">Enter your PIN to check out &nbsp;|&nbsp; v5</div>
     </div>
   </div>
 </div>
@@ -286,50 +286,48 @@
   <div id="formWrap">
     <p class="req-note"><span>*</span> Required fields</p>
 
-    <!-- Step 1: Enter name + phone -->
+        <!-- Step 1: Enter PIN -->
     <div id="step1">
-      <div class="section-label">Your Details</div>
-      <div class="card">
-        <div class="field">
-          <label class="field-label" for="co_name">First Name <span class="req">*</span></label>
-          <input class="field-input" id="co_name" type="text" placeholder="Your first name" autocapitalize="words" autocomplete="given-name" />
+      <div class="section-label">Enter Your PIN</div>
+      <div class="card" style="text-align:center;padding:28px 16px">
+        <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#666;margin-bottom:16px">
+          Enter the 4-digit PIN from your check-in
         </div>
-        <div class="field">
-          <label class="field-label" for="co_phone">Phone Number <span class="req">*</span></label>
-          <input class="field-input" id="co_phone" type="tel" placeholder="555-000-0000" oninput="autoPhone(this)" />
-        </div>
+        <input
+          class="field-input"
+          id="co_pin"
+          type="number"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          placeholder="0000"
+          oninput="onPinInput(this)"
+          style="text-align:center;font-family:'Black Han Sans',sans-serif;font-size:48px;letter-spacing:12px;padding:16px;border:3px solid #e0e0e0;max-width:240px;margin:0 auto;display:block"
+        />
+        <div style="font-size:12px;color:#aaa;margin-top:12px">The PIN was shown after you checked in</div>
       </div>
       <div class="msg-box msg-error" id="msgError"></div>
-      <button class="btn-submit" id="lookupBtn" onclick="lookupDriver()">
+      <button class="btn-submit" id="lookupBtn" onclick="lookupByPIN()">
         Find My Record
       </button>
     </div>
 
-    <!-- Step 2: Confirm card (hidden until lookup succeeds) -->
+    <!-- Step 2: Confirm -->
     <div id="step2" style="display:none">
       <div class="section-label">Is this you?</div>
       <div class="card" style="text-align:center;padding:24px 16px">
         <div style="font-size:13px;color:#666;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Your Check-In Record</div>
         <div id="confirmName" style="font-family:'Black Han Sans',sans-serif;font-size:32px;color:#0a0a0a;line-height:1;margin-bottom:6px"></div>
-        <div id="confirmDetail" style="font-size:14px;color:#555;margin-bottom:0"></div>
+        <div id="confirmDetail" style="font-size:14px;color:#555"></div>
       </div>
       <button class="btn-submit" id="confirmBtn" onclick="confirmCheckOut()">
         &#10003; Confirm Check-Out
       </button>
       <button onclick="goBack()" style="width:100%;padding:14px;background:none;border:none;color:rgba(255,255,255,0.5);font-family:'Black Han Sans',sans-serif;font-size:16px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;margin-top:4px">
-        Not Me — Go Back
+        Not Me - Go Back
       </button>
     </div>
-  </div>
 
-  <!-- Success -->
-  <div class="success-screen" id="successScreen">
-    <div class="success-icon">&#10003;</div>
-    <div class="success-title">Checked Out!</div>
-    <div class="success-sub" id="successName"></div>
-    <div class="success-time" id="successTime"></div>
-    <button class="btn-again" onclick="resetForm()">New Check-Out</button>
-  </div>
+</div>
 
 </div>
 
@@ -339,6 +337,12 @@
 var SHEET_ID    = '10Ur-rkpsHkb8oaIKVVO1rDQQoFWaMco_Q21ZpP3Wq2k';
 var SHEET_NAME  = 'Check-In';
 var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx5rRVcMJBFVsU6Zk311B3IK6K2xXoJfm0ED-jGVkT6fuaWw98kukXW0H1ZHSqHOwmeaA/exec';
+
+// Col indices (0-based): 10=TimeOut, 12=PIN
+var COL_TIMEOUT_ZERO = 10;
+var COL_PIN_ZERO     = 12;
+// Col numbers (1-based for Apps Script update action)
+var COL_TIMEOUT_ONE  = 11;
 
 var matchedDriver = null;
 
@@ -361,60 +365,12 @@ function nowDisplay() {
   return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + '  |  ' + h + ':' + pad(m) + ' ' + ampm;
 }
 
-function autoPhone(input) {
-  var digits = '';
-  for (var i = 0; i < input.value.length; i++) {
-    var code = input.value.charCodeAt(i);
-    if (code >= 48 && code <= 57) digits += input.value[i];
-  }
-  digits = digits.slice(0, 10);
-  var f = digits;
-  if (digits.length > 6) f = digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
-  else if (digits.length > 3) f = digits.slice(0,3) + '-' + digits.slice(3);
-  input.value = f;
-}
-
-function stripNonDigits(s) {
-  var out = '';
-  for (var i = 0; i < s.length; i++) {
-    var code = s.charCodeAt(i);
-    if (code >= 48 && code <= 57) out += s[i];
-  }
-  return out;
-}
-
-function formatPhone(p) {
-  if (!p) return '';
-  var d = stripNonDigits(String(p));
-  if (d.length === 10) return d.slice(0,3) + '-' + d.slice(3,6) + '-' + d.slice(6);
-  if (d.length === 11 && d[0] === '1') return d.slice(1,4) + '-' + d.slice(4,7) + '-' + d.slice(7);
-  return p;
-}
-
-function formatTime(t) {
-  if (!t) return '';
-  t = String(t).trim();
-  if (!t || t === '0') return '';
-  if (t.indexOf('AM') >= 0 || t.indexOf('PM') >= 0) return t;
-  if (t.indexOf(':') >= 0) {
-    var parts = t.split(':');
-    var h = parseInt(parts[0]);
-    var m = parseInt(parts[1]);
-    var ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    return h + ':' + pad(m) + ' ' + ampm;
-  }
-  return t;
-}
-
 function parseCSV(text) {
   var result = [];
   var rows = text.split(String.fromCharCode(10));
   for (var r = 0; r < rows.length; r++) {
     var line = rows[r];
-    var cols = [];
-    var cur = '';
-    var inQ = false;
+    var cols = [], cur = '', inQ = false;
     for (var i = 0; i < line.length; i++) {
       var c = line[i];
       if (c === '"') { inQ = !inQ; continue; }
@@ -427,20 +383,34 @@ function parseCSV(text) {
   return result;
 }
 
-// Step 1 - driver enters name + phone, we look them up
-async function lookupDriver() {
-  var nameVal  = document.getElementById('co_name').value.trim();
-  var phoneVal = document.getElementById('co_phone').value.trim();
-  var errBox   = document.getElementById('msgError');
+function onPinInput(input) {
+  // Allow digits only, max 4
+  var digits = '';
+  for (var i = 0; i < input.value.length; i++) {
+    var code = input.value.charCodeAt(i);
+    if (code >= 48 && code <= 57) digits += input.value[i];
+  }
+  input.value = digits.slice(0, 4);
+  // Auto-submit when 4 digits entered
+  if (input.value.length === 4) {
+    lookupByPIN();
+  }
+}
+
+async function lookupByPIN() {
+  var pinVal = document.getElementById('co_pin').value.trim();
+  var errBox = document.getElementById('msgError');
   errBox.classList.remove('show');
   matchedDriver = null;
 
-  if (!nameVal) { showError('Please enter your first name.'); return; }
-  if (stripNonDigits(phoneVal).length < 7) { showError('Please enter your phone number.'); return; }
+  if (pinVal.length !== 4) {
+    showError('Please enter your 4-digit PIN.');
+    return;
+  }
 
   var btn = document.getElementById('lookupBtn');
   btn.disabled  = true;
-  btn.innerHTML = 'Looking you up...';
+  btn.innerHTML = 'Looking up...';
 
   try {
     var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
@@ -450,60 +420,46 @@ async function lookupDriver() {
     var text = await res.text();
     var rows = parseCSV(text).slice(1);
 
-    var nameNorm  = nameVal.toLowerCase().trim();
-    var phoneNorm = stripNonDigits(phoneVal);
-
-    // Find the most recent open record matching name + phone
     for (var i = 0; i < rows.length; i++) {
-      var row       = rows[i];
-      var rowName   = String(row[1] || '').trim().toLowerCase();
-      var rowFirst  = rowName.split(' ')[0];
-      var rowPhone  = stripNonDigits(String(row[2] || ''));
-      var rowOut    = String(row[10] || '').trim();
-      var notOut    = !rowOut || rowOut === '0';
+      var row    = rows[i];
+      var rowPIN = String(row[COL_PIN_ZERO] || '').trim();
+      var rowOut = String(row[COL_TIMEOUT_ZERO] || '').trim();
+      var notOut = !rowOut || rowOut === '0';
 
-      var nameMatch  = rowName === nameNorm || rowFirst === nameNorm;
-      var phoneMatch = phoneNorm.length >= 7 &&
-                       rowPhone.slice(-7) === phoneNorm.slice(-7);
-
-      if (nameMatch && phoneMatch && notOut) {
+      if (rowPIN === pinVal && notOut) {
         matchedDriver = {
           rowNum:  i + 2,
           name:    String(row[1] || '').trim(),
-          phone:   formatPhone(row[2] || ''),
-          carrier: String(row[3] || ''),
-          timeIn:  formatTime(row[9] || '')
+          carrier: String(row[3] || '').trim(),
+          timeIn:  String(row[9] || '').trim()
         };
-        // Keep iterating - last match wins (most recent record)
+        // Last match wins in case of duplicate PINs on same day
       }
     }
 
     if (!matchedDriver) {
-      showError('No open check-in found for that name and phone number. Please check your details or see a staff member.');
+      showError('PIN not found or already checked out. Please check your PIN or see a staff member.');
       btn.disabled  = false;
       btn.innerHTML = 'Find My Record';
       return;
     }
 
-    // Show step 2 - confirm card
+    // Show confirm step
     document.getElementById('step1').style.display = 'none';
-    var step2 = document.getElementById('step2');
-    step2.style.display = 'block';
-
-    document.getElementById('confirmName').textContent    = matchedDriver.name;
+    document.getElementById('step2').style.display = 'block';
+    document.getElementById('confirmName').textContent = matchedDriver.name;
     var details = [];
     if (matchedDriver.carrier) details.push(matchedDriver.carrier);
     if (matchedDriver.timeIn)  details.push('Checked in: ' + matchedDriver.timeIn);
     document.getElementById('confirmDetail').textContent = details.join('  |  ');
 
   } catch(err) {
-    showError('Something went wrong loading your record. Please try again.');
+    showError('Could not look up your PIN. Please try again.');
     btn.disabled  = false;
     btn.innerHTML = 'Find My Record';
   }
 }
 
-// Step 2 - driver confirms and we stamp Time Out
 async function confirmCheckOut() {
   if (!matchedDriver) return;
 
@@ -514,15 +470,16 @@ async function confirmCheckOut() {
   try {
     var timeOut = nowTime();
     var qs = 'action=update&rowNum=' + matchedDriver.rowNum +
-             '&col=11&value=' + encodeURIComponent(timeOut);
+             '&col=' + COL_TIMEOUT_ONE +
+             '&value=' + encodeURIComponent(timeOut);
     await fetch(WEB_APP_URL + '?' + qs, { method: 'GET', mode: 'no-cors' });
     await new Promise(function(r) { setTimeout(r, 1800); });
 
-    document.getElementById('step2').style.display = 'none';
+    document.getElementById('step2').style.display    = 'none';
     document.getElementById('formWrap').style.display = 'none';
     document.getElementById('successScreen').classList.add('visible');
-    document.getElementById('successName').textContent  = 'Safe travels, ' + matchedDriver.name + '!';
-    document.getElementById('successTime').textContent  = nowDisplay();
+    document.getElementById('successName').textContent = 'Safe travels, ' + matchedDriver.name + '!';
+    document.getElementById('successTime').textContent = nowDisplay();
 
   } catch(err) {
     showError('Something went wrong. Please try again or see a staff member.');
@@ -533,8 +490,9 @@ async function confirmCheckOut() {
 
 function goBack() {
   matchedDriver = null;
-  document.getElementById('step2').style.display = 'none';
-  document.getElementById('step1').style.display = 'block';
+  document.getElementById('step2').style.display  = 'none';
+  document.getElementById('step1').style.display  = 'block';
+  document.getElementById('co_pin').value = '';
   document.getElementById('msgError').classList.remove('show');
   var btn = document.getElementById('lookupBtn');
   btn.disabled  = false;
@@ -543,11 +501,10 @@ function goBack() {
 
 function resetForm() {
   matchedDriver = null;
-  document.getElementById('co_name').value  = '';
-  document.getElementById('co_phone').value = '';
+  document.getElementById('co_pin').value = '';
   document.getElementById('msgError').classList.remove('show');
-  document.getElementById('step2').style.display  = 'none';
-  document.getElementById('step1').style.display  = 'block';
+  document.getElementById('step2').style.display    = 'none';
+  document.getElementById('step1').style.display    = 'block';
   document.getElementById('successScreen').classList.remove('visible');
   document.getElementById('formWrap').style.display = 'block';
   var btn = document.getElementById('lookupBtn');
@@ -569,7 +526,7 @@ document.addEventListener('keydown', function(e) {
       confirmCheckOut();
     } else {
       var btn = document.getElementById('lookupBtn');
-      if (btn && !btn.disabled) lookupDriver();
+      if (btn && !btn.disabled) lookupByPIN();
     }
   }
 });
