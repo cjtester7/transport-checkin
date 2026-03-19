@@ -286,23 +286,26 @@
   <div id="formWrap">
     <p class="req-note"><span>*</span> Required fields</p>
 
-    <div class="section-label">Your Info</div>
+    <div class="section-label">Select Your Name</div>
     <div class="card">
       <div class="field">
-        <label class="field-label" for="co_name">First Name <span class="req">*</span></label>
-        <input class="field-input" id="co_name" type="text" placeholder="Your first name" autocapitalize="words" autocomplete="given-name" />
+        <label class="field-label">Drivers Currently On Site <span class="req">*</span></label>
+        <div id="loadingMsg" style="color:#aaa;font-size:15px;padding:10px 0">Loading drivers...</div>
+        <select class="field-input" id="co_select" style="display:none;cursor:pointer" onchange="onDriverSelect(this)">
+          <option value="">-- Select your name --</option>
+        </select>
       </div>
-      <div class="field">
-        <label class="field-label" for="co_phone">Phone Number <span class="req">*</span></label>
-        <input class="field-input" id="co_phone" type="tel" placeholder="555-000-0000" oninput="autoPhone(this)" />
+      <div id="selectedInfo" style="display:none;margin-top:12px;background:#f0f4ff;border-radius:8px;padding:12px 14px;border:2px solid #c5d5f5">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#666;margin-bottom:4px">Selected Driver</div>
+        <div id="selectedName" style="font-size:20px;font-weight:700;color:#0a0a0a;font-family:'Black Han Sans',sans-serif"></div>
+        <div id="selectedDetail" style="font-size:13px;color:#555;margin-top:2px"></div>
       </div>
     </div>
 
     <div class="msg-box msg-error" id="msgError"></div>
-    <div class="msg-box msg-found" id="msgFound"></div>
 
-    <button class="btn-submit" id="submitBtn" onclick="submitCheckOut()">
-      &#10003; Check Out
+    <button class="btn-submit" id="submitBtn" onclick="submitCheckOut()" style="display:none">
+      &#10003; Confirm Check-Out
     </button>
   </div>
 
@@ -324,12 +327,8 @@ var SHEET_ID    = '10Ur-rkpsHkb8oaIKVVO1rDQQoFWaMco_Q21ZpP3Wq2k';
 var SHEET_NAME  = 'Check-In';
 var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx5rRVcMJBFVsU6Zk311B3IK6K2xXoJfm0ED-jGVkT6fuaWw98kukXW0H1ZHSqHOwmeaA/exec';
 
-// Column indices (0-based) matching sheet layout:
-// A=0 Date, B=1 Driver, C=2 DriverPhone, D=3 Carrier, E=4 CarrierPhone,
-// F=5 Lane, G=6 DropOff, H=7 Pickup, I=8 Associate, J=9 TimeIn, K=10 TimeOut, L=11 Comments
-var COL_DRIVER       = 1;
-var COL_DRIVER_PHONE = 2;
-var COL_TIME_OUT     = 10; // 1-based for Apps Script = 11
+var onSiteDrivers = []; // [{rowNum, name, phone, carrier, timeIn}]
+var selectedDriver = null;
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
@@ -352,25 +351,38 @@ function nowDisplay() {
 
 function autoPhone(input) {
   var digits = input.value.replace(/[^0-9]/g, '').slice(0, 10);
-  var formatted = digits;
-  if (digits.length > 6) {
-    formatted = digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
-  } else if (digits.length > 3) {
-    formatted = digits.slice(0,3) + '-' + digits.slice(3);
+  var f = digits;
+  if (digits.length > 6) f = digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
+  else if (digits.length > 3) f = digits.slice(0,3) + '-' + digits.slice(3);
+  input.value = f;
+}
+
+function formatPhone(p) {
+  if (!p) return '';
+  var digits = String(p).replace(/[^0-9]/g, '');
+  if (digits.length === 10) return digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
+  if (digits.length === 11 && digits[0] === '1') return digits.slice(1,4) + '-' + digits.slice(4,7) + '-' + digits.slice(7);
+  return p;
+}
+
+function formatTime(t) {
+  if (!t) return '';
+  t = String(t).trim();
+  if (!t || t === '0') return '';
+  if (t.includes('AM') || t.includes('PM')) return t;
+  if (t.includes(':')) {
+    var parts = t.split(':').map(Number);
+    var h = parts[0], m = parts[1];
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return h + ':' + pad(m) + ' ' + ampm;
   }
-  input.value = formatted;
-}
-
-function normalizePhone(p) {
-  return String(p || '').replace(/[^0-9]/g, '');
-}
-
-function normalizeName(n) {
-  return String(n || '').trim().toLowerCase();
+  return t;
 }
 
 function parseCSV(text) {
-  var lines = text.split('\n');
+  var lines = text.split('
+');
   return lines.map(function(line) {
     var cols = [], cur = '', inQ = false;
     for (var i = 0; i < line.length; i++) {
@@ -384,133 +396,151 @@ function parseCSV(text) {
   }).filter(function(r) { return r.length > 1; });
 }
 
-async function fetchSheet() {
-  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
-            '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(SHEET_NAME);
-  var res = await fetch(url);
-  if (!res.ok) throw new Error('Could not load sheet data');
-  var text = await res.text();
-  var rows = parseCSV(text);
-  return rows.slice(1); // skip header row
+async function loadOnSiteDrivers() {
+  var loadMsg  = document.getElementById('loadingMsg');
+  var selectEl = document.getElementById('co_select');
+  var errBox   = document.getElementById('msgError');
+  errBox.classList.remove('show');
+
+  try {
+    var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
+              '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(SHEET_NAME);
+    var res  = await fetch(url);
+    if (!res.ok) throw new Error('Could not load sheet');
+    var text = await res.text();
+    var rows = parseCSV(text).slice(1); // skip header
+
+    // Col indices (0-based): 1=Driver, 2=DriverPhone, 3=Carrier, 9=TimeIn, 10=TimeOut
+    onSiteDrivers = [];
+    rows.forEach(function(row, i) {
+      var driver  = String(row[1] || '').trim();
+      var timeOut = String(row[10] || '').trim();
+      var notOut  = !timeOut || timeOut === '0';
+      if (driver && notOut) {
+        onSiteDrivers.push({
+          rowNum:  i + 2,
+          name:    driver,
+          phone:   formatPhone(row[2] || ''),
+          carrier: row[3] || '',
+          timeIn:  formatTime(row[9] || '')
+        });
+      }
+    });
+
+    loadMsg.style.display = 'none';
+
+    if (onSiteDrivers.length === 0) {
+      loadMsg.style.display = 'block';
+      loadMsg.textContent   = 'No drivers currently on site.';
+      loadMsg.style.color   = '#888';
+      return;
+    }
+
+    // Populate dropdown
+    selectEl.innerHTML = '<option value="">-- Select your name --</option>';
+    onSiteDrivers.forEach(function(d, idx) {
+      var opt   = document.createElement('option');
+      opt.value = idx;
+      var phone = d.phone ? '  |  ' + d.phone : '';
+      var tIn   = d.timeIn ? '  |  In: ' + d.timeIn : '';
+      opt.textContent = d.name + phone + tIn;
+      selectEl.appendChild(opt);
+    });
+    selectEl.style.display = 'block';
+
+  } catch(err) {
+    loadMsg.textContent   = 'Could not load driver list. Please try again.';
+    loadMsg.style.color   = '#d32f2f';
+    loadMsg.style.display = 'block';
+    console.error(err);
+  }
 }
 
-function findDriverRow(rows, firstName, phone) {
-  var nameNorm  = normalizeName(firstName);
-  var phoneNorm = normalizePhone(phone);
-  var match     = null;
-  var matchRow  = -1;
+function onDriverSelect(sel) {
+  var infoBox  = document.getElementById('selectedInfo');
+  var nameEl   = document.getElementById('selectedName');
+  var detailEl = document.getElementById('selectedDetail');
+  var submitBtn = document.getElementById('submitBtn');
 
-  rows.forEach(function(row, i) {
-    var rowName  = normalizeName(row[COL_DRIVER] || '');
-    var rowPhone = normalizePhone(row[COL_DRIVER_PHONE] || '');
-    var rowOut   = String(row[COL_TIME_OUT] || '').trim();
+  if (!sel.value && sel.value !== 0) {
+    infoBox.style.display  = 'none';
+    submitBtn.style.display = 'none';
+    selectedDriver = null;
+    return;
+  }
 
-    // Match on first name and phone digits
-    var nameMatch  = rowName === nameNorm ||
-                     rowName.split(' ')[0] === nameNorm;
-    var phoneMatch = phoneNorm.length >= 7 &&
-                     rowPhone.slice(-7) === phoneNorm.slice(-7);
+  var idx = parseInt(sel.value);
+  selectedDriver = onSiteDrivers[idx];
 
-    // Only match records that are NOT already checked out
-    var notOut = !rowOut || rowOut === '0' || rowOut === '';
+  nameEl.textContent = selectedDriver.name;
+  var details = [];
+  if (selectedDriver.phone)   details.push(selectedDriver.phone);
+  if (selectedDriver.carrier) details.push(selectedDriver.carrier);
+  if (selectedDriver.timeIn)  details.push('Checked in: ' + selectedDriver.timeIn);
+  detailEl.textContent = details.join('  |  ');
 
-    if (nameMatch && phoneMatch && notOut) {
-      // Prefer the most recent (last) matching unchecked record
-      match    = row;
-      matchRow = i + 2; // +1 for header, +1 for 1-based row number
-    }
-  });
-
-  return { row: match, rowNum: matchRow };
+  infoBox.style.display   = 'block';
+  submitBtn.style.display = 'flex';
 }
 
 async function submitCheckOut() {
-  var firstName = document.getElementById('co_name').value.trim();
-  var phone     = document.getElementById('co_phone').value.trim();
-  var errBox    = document.getElementById('msgError');
-  var foundBox  = document.getElementById('msgFound');
-
-  errBox.classList.remove('show');
-  foundBox.classList.remove('show');
-
-  if (!firstName) { showError('Please enter your first name.'); return; }
-  if (!phone || normalizePhone(phone).length < 7) {
-    showError('Please enter your phone number.');
+  if (!selectedDriver) {
+    document.getElementById('msgError').textContent = 'Please select your name from the list.';
+    document.getElementById('msgError').classList.add('show');
     return;
   }
 
   var btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.innerHTML = 'Looking you up...';
+  btn.disabled   = true;
+  btn.innerHTML  = 'Checking you out...';
 
   try {
-    var rows = await fetchSheet();
-    var result = findDriverRow(rows, firstName, phone);
-
-    if (!result.row || result.rowNum < 2) {
-      showError('No open check-in found for ' + firstName + ' with that phone number. Please check your details or see a staff member.');
-      btn.disabled = false;
-      btn.innerHTML = '&#10003; Check Out';
-      return;
-    }
-
-    // Found - stamp Time Out
-    btn.innerHTML = 'Checking you out...';
     var timeOut = nowTime();
-    var qs = 'action=update&rowNum=' + result.rowNum +
+    var qs = 'action=update&rowNum=' + selectedDriver.rowNum +
              '&col=11&value=' + encodeURIComponent(timeOut);
 
     await fetch(WEB_APP_URL + '?' + qs, { method: 'GET', mode: 'no-cors' });
     await new Promise(function(r) { setTimeout(r, 1800); });
 
-    // Success
     document.getElementById('formWrap').style.display = 'none';
     var ss = document.getElementById('successScreen');
     ss.classList.add('visible');
-    document.getElementById('successName').textContent =
-      'Safe travels, ' + firstName + '!';
+    document.getElementById('successName').textContent = 'Safe travels, ' + selectedDriver.name + '!';
     document.getElementById('successTime').textContent = nowDisplay();
 
   } catch(err) {
-    showError('Something went wrong: ' + err.message + '. Please try again or see a staff member.');
-    btn.disabled = false;
-    btn.innerHTML = '&#10003; Check Out';
+    document.getElementById('msgError').textContent = 'Something went wrong. Please try again or see a staff member.';
+    document.getElementById('msgError').classList.add('show');
+    btn.disabled  = false;
+    btn.innerHTML = '&#10003; Confirm Check-Out';
   }
-}
-
-function showError(msg) {
-  var errBox = document.getElementById('msgError');
-  errBox.textContent = msg;
-  errBox.classList.add('show');
 }
 
 function resetForm() {
-  document.getElementById('co_name').value  = '';
-  document.getElementById('co_phone').value = '';
+  selectedDriver = null;
+  document.getElementById('co_select').value      = '';
+  document.getElementById('selectedInfo').style.display  = 'none';
+  document.getElementById('submitBtn').style.display     = 'none';
   document.getElementById('msgError').classList.remove('show');
-  document.getElementById('msgFound').classList.remove('show');
   document.getElementById('successScreen').classList.remove('visible');
   document.getElementById('formWrap').style.display = 'block';
   var btn = document.getElementById('submitBtn');
-  btn.disabled = false;
-  btn.innerHTML = '&#10003; Check Out';
+  btn.disabled  = false;
+  btn.innerHTML = '&#10003; Confirm Check-Out';
+  // Reload the driver list to get fresh data
+  var loadMsg  = document.getElementById('loadingMsg');
+  var selectEl = document.getElementById('co_select');
+  loadMsg.textContent   = 'Loading drivers...';
+  loadMsg.style.color   = '#aaa';
+  loadMsg.style.display = 'block';
+  selectEl.style.display = 'none';
+  loadOnSiteDrivers();
   window.scrollTo(0, 0);
 }
 
-function showToast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._t);
-  t._t = setTimeout(function() { t.classList.remove('show'); }, 3500);
-}
-
-// Allow Enter key to submit
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    var btn = document.getElementById('submitBtn');
-    if (!btn.disabled) submitCheckOut();
-  }
+// Load drivers on page load
+window.addEventListener('DOMContentLoaded', function() {
+  loadOnSiteDrivers();
 });
 </script>
 </body>
