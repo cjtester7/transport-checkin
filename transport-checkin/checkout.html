@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Driver Check-In</title>
+<title>Driver Check-Out</title>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   :root {
-    --black: #0a0a0a;
-    --yellow: #FFD000;
-    --yellow-dark: #e6bb00;
-    --white: #ffffff;
-    --gray: #f2f2f2;
-    --gray2: #e0e0e0;
-    --text: #0a0a0a;
-    --text2: #444;
-    --red: #d32f2f;
-    --green: #1b7a3e;
-    --radius: 6px;
+    --black:   #0a0a0a;
+    --blue:    #1565C0;
+    --blue-lt: #1976D2;
+    --blue-dk: #0D47A1;
+    --white:   #ffffff;
+    --gray:    #f2f2f2;
+    --gray2:   #e0e0e0;
+    --text:    #0a0a0a;
+    --text2:   #444;
+    --red:     #d32f2f;
+    --green:   #1b7a3e;
   }
 
   html, body {
@@ -28,9 +28,9 @@
     font-family: 'Noto Sans', sans-serif;
   }
 
-  /* Diagonal header stripe */
+  /* Header */
   .page-header {
-    background: var(--yellow);
+    background: var(--blue);
     padding: 28px 20px 22px;
     position: relative;
     overflow: hidden;
@@ -59,11 +59,10 @@
     font-size: 28px;
     flex-shrink: 0;
   }
-  .header-text {}
   .header-title {
     font-family: 'Black Han Sans', sans-serif;
     font-size: 30px;
-    color: var(--black);
+    color: var(--white);
     line-height: 1;
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -71,8 +70,7 @@
   .header-sub {
     font-size: 13px;
     font-weight: 700;
-    color: var(--black);
-    opacity: 0.6;
+    color: rgba(255,255,255,0.65);
     text-transform: uppercase;
     letter-spacing: 1.5px;
     margin-top: 3px;
@@ -90,10 +88,10 @@
     font-size: 13px;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--yellow);
+    color: var(--blue-lt);
     margin-bottom: 12px;
     padding-left: 10px;
-    border-left: 3px solid var(--yellow);
+    border-left: 3px solid var(--blue-lt);
   }
 
   .card {
@@ -103,10 +101,7 @@
     margin-bottom: 16px;
   }
 
-  /* Fields */
-  .field {
-    margin-bottom: 16px;
-  }
+  .field { margin-bottom: 16px; }
   .field:last-child { margin-bottom: 0; }
 
   .field-label {
@@ -118,16 +113,13 @@
     color: var(--text2);
     margin-bottom: 6px;
   }
-  .field-label .req {
-    color: var(--red);
-    margin-left: 2px;
-  }
+  .field-label .req { color: var(--red); margin-left: 2px; }
 
   .field-input {
     width: 100%;
     background: var(--gray);
     border: 2px solid var(--gray2);
-    border-radius: var(--radius);
+    border-radius: 6px;
     padding: 14px 16px;
     font-family: 'Noto Sans', sans-serif;
     font-size: 18px;
@@ -138,81 +130,22 @@
     -webkit-appearance: none;
   }
   .field-input:focus {
-    border-color: var(--yellow-dark);
+    border-color: var(--blue-lt);
     background: var(--white);
   }
-  .field-input::placeholder {
-    color: #aaa;
-    font-weight: 400;
-  }
-
-  /* Two-col grid */
-  .field-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  .field-row .field { margin-bottom: 0; }
-
-  /* Counter inputs */
-  .counter-wrap {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    border: 2px solid var(--gray2);
-    border-radius: var(--radius);
-    overflow: hidden;
-    background: var(--gray);
-    transition: border-color 0.15s;
-  }
-  .counter-wrap:focus-within {
-    border-color: var(--yellow-dark);
-    background: var(--white);
-  }
-  .counter-btn {
-    width: 52px;
-    height: 54px;
-    background: var(--black);
-    border: none;
-    color: var(--yellow);
-    font-size: 26px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.15s;
-    flex-shrink: 0;
-    line-height: 1;
-  }
-  .counter-btn:active { background: #222; }
-  .counter-input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    font-family: 'Black Han Sans', sans-serif;
-    font-size: 28px;
-    color: var(--text);
-    text-align: center;
-    outline: none;
-    padding: 8px 4px;
-    min-width: 0;
-    -webkit-appearance: none;
-    -moz-appearance: textfield;
-  }
-  .counter-input::-webkit-outer-spin-button,
-  .counter-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .field-input::placeholder { color: #aaa; font-weight: 400; }
 
   /* Submit button */
   .btn-submit {
     width: 100%;
     padding: 20px;
-    background: var(--yellow);
+    background: var(--blue);
     border: none;
     border-radius: 10px;
     font-family: 'Black Han Sans', sans-serif;
     font-size: 24px;
     letter-spacing: 1px;
-    color: var(--black);
+    color: var(--white);
     cursor: pointer;
     text-transform: uppercase;
     transition: transform 0.1s, background 0.15s;
@@ -222,8 +155,30 @@
     justify-content: center;
     gap: 10px;
   }
-  .btn-submit:active { transform: scale(0.98); background: var(--yellow-dark); }
+  .btn-submit:active { transform: scale(0.98); background: var(--blue-dk); }
   .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Status messages */
+  .msg-box {
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .msg-box.show { display: block; }
+  .msg-error {
+    background: rgba(211,47,47,0.1);
+    border: 2px solid rgba(211,47,47,0.4);
+    color: var(--red);
+  }
+  .msg-found {
+    background: rgba(25,118,210,0.1);
+    border: 2px solid rgba(25,118,210,0.4);
+    color: var(--blue-lt);
+  }
 
   /* Success screen */
   .success-screen {
@@ -234,7 +189,7 @@
   .success-screen.visible { display: block; }
   .success-icon {
     width: 90px; height: 90px;
-    background: var(--yellow);
+    background: var(--blue);
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     font-size: 44px;
@@ -243,12 +198,12 @@
   }
   @keyframes popIn {
     from { transform: scale(0); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
+    to   { transform: scale(1); opacity: 1; }
   }
   .success-title {
     font-family: 'Black Han Sans', sans-serif;
     font-size: 36px;
-    color: var(--yellow);
+    color: var(--blue-lt);
     text-transform: uppercase;
     line-height: 1;
     margin-bottom: 10px;
@@ -256,8 +211,8 @@
   .success-sub {
     font-size: 16px;
     color: #aaa;
-    margin-bottom: 8px;
     line-height: 1.5;
+    margin-bottom: 8px;
   }
   .success-time {
     font-family: 'Black Han Sans', sans-serif;
@@ -269,19 +224,30 @@
     display: inline-block;
     padding: 16px 36px;
     background: transparent;
-    border: 3px solid var(--yellow);
+    border: 3px solid var(--blue-lt);
     border-radius: 10px;
     font-family: 'Black Han Sans', sans-serif;
     font-size: 20px;
-    color: var(--yellow);
+    color: var(--blue-lt);
     cursor: pointer;
     text-transform: uppercase;
     letter-spacing: 1px;
     transition: background 0.15s;
   }
-  .btn-again:hover { background: rgba(255,208,0,0.1); }
+  .btn-again:hover { background: rgba(25,118,210,0.15); }
 
-  /* Error toast */
+  .req-note {
+    font-size: 12px;
+    color: #888;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .req-note span { color: var(--red); }
+
+  #formWrap { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Toast */
   .toast {
     position: fixed;
     bottom: 24px;
@@ -300,19 +266,6 @@
     pointer-events: none;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  /* Required note */
-  .req-note {
-    font-size: 12px;
-    color: #888;
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  .req-note span { color: var(--red); }
-
-  /* Form wrapper for hide/show */
-  #formWrap { animation: fadeIn 0.3s ease; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 </style>
 </head>
 <body>
@@ -320,9 +273,9 @@
 <div class="page-header">
   <div class="header-inner">
     <div class="header-icon-wrap">🚛</div>
-    <div class="header-text">
-      <div class="header-title">Driver Check-In</div>
-      <div class="header-sub">Please complete all required fields</div>
+    <div>
+      <div class="header-title">Driver Check-Out</div>
+      <div class="header-sub">Enter your details to check out</div>
     </div>
   </div>
 </div>
@@ -333,65 +286,33 @@
   <div id="formWrap">
     <p class="req-note"><span>*</span> Required fields</p>
 
-    <!-- Driver Info -->
-    <div class="section-label">Driver Info</div>
+    <div class="section-label">Your Info</div>
     <div class="card">
       <div class="field">
-        <label class="field-label" for="d_driver">Driver Name <span class="req">*</span></label>
-        <input class="field-input" id="d_driver" type="text" placeholder="Your full name" autocomplete="name" autocapitalize="words" />
+        <label class="field-label" for="co_name">First Name <span class="req">*</span></label>
+        <input class="field-input" id="co_name" type="text" placeholder="Your first name" autocapitalize="words" autocomplete="given-name" />
       </div>
       <div class="field">
-        <label class="field-label" for="d_driverphone">Driver Phone <span class="req">*</span></label>
-        <input class="field-input" id="d_driverphone" type="tel" placeholder="555-000-0000" autocomplete="tel" />
+        <label class="field-label" for="co_phone">Phone Number <span class="req">*</span></label>
+        <input class="field-input" id="co_phone" type="tel" placeholder="555-000-0000" oninput="autoPhone(this)" />
       </div>
     </div>
 
-    <!-- Carrier Info -->
-    <div class="section-label">Carrier Info</div>
-    <div class="card">
-      <div class="field">
-        <label class="field-label" for="d_carrier">Carrier Name <span class="req">*</span></label>
-        <input class="field-input" id="d_carrier" type="text" placeholder="Company name" autocapitalize="words" />
-      </div>
-      <div class="field">
-        <label class="field-label" for="d_carrierphone">Carrier Phone</label>
-        <input class="field-input" id="d_carrierphone" type="tel" placeholder="555-000-0000" />
-      </div>
-    </div>
+    <div class="msg-box msg-error" id="msgError"></div>
+    <div class="msg-box msg-found" id="msgFound"></div>
 
-    <!-- Vehicle Count -->
-    <div class="section-label">Vehicle Count</div>
-    <div class="card">
-      <div class="field">
-        <label class="field-label">Drop Off</label>
-        <div class="counter-wrap">
-          <button class="counter-btn" onclick="adjust('d_dropoff', -1)" type="button">-</button>
-          <input class="counter-input" id="d_dropoff" type="number" value="0" min="0" />
-          <button class="counter-btn" onclick="adjust('d_dropoff', 1)" type="button">+</button>
-        </div>
-      </div>
-      <div class="field">
-        <label class="field-label">Pickup</label>
-        <div class="counter-wrap">
-          <button class="counter-btn" onclick="adjust('d_pickup', -1)" type="button">-</button>
-          <input class="counter-input" id="d_pickup" type="number" value="0" min="0" />
-          <button class="counter-btn" onclick="adjust('d_pickup', 1)" type="button">+</button>
-        </div>
-      </div>
-    </div>
-
-    <button class="btn-submit" id="submitBtn" onclick="submitForm()">
-      <span>&#10003;</span> Submit Check-In
+    <button class="btn-submit" id="submitBtn" onclick="submitCheckOut()">
+      &#10003; Check Out
     </button>
   </div>
 
-  <!-- Success Screen -->
+  <!-- Success -->
   <div class="success-screen" id="successScreen">
     <div class="success-icon">&#10003;</div>
-    <div class="success-title">You're Checked In!</div>
-    <div class="success-sub">Your check-in has been recorded.</div>
+    <div class="success-title">Checked Out!</div>
+    <div class="success-sub" id="successName"></div>
     <div class="success-time" id="successTime"></div>
-    <button class="btn-again" onclick="resetForm()">New Check-In</button>
+    <button class="btn-again" onclick="resetForm()">New Check-Out</button>
   </div>
 
 </div>
@@ -399,20 +320,18 @@
 <div class="toast" id="toast"></div>
 
 <script>
+var SHEET_ID    = '10Ur-rkpsHkb8oaIKVVO1rDQQoFWaMco_Q21ZpP3Wq2k';
+var SHEET_NAME  = 'Check-In';
 var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx5rRVcMJBFVsU6Zk311B3IK6K2xXoJfm0ED-jGVkT6fuaWw98kukXW0H1ZHSqHOwmeaA/exec';
 
-function adjust(id, delta) {
-  var el = document.getElementById(id);
-  var val = parseInt(el.value) || 0;
-  el.value = Math.max(0, val + delta);
-}
+// Column indices (0-based) matching sheet layout:
+// A=0 Date, B=1 Driver, C=2 DriverPhone, D=3 Carrier, E=4 CarrierPhone,
+// F=5 Lane, G=6 DropOff, H=7 Pickup, I=8 Associate, J=9 TimeIn, K=10 TimeOut, L=11 Comments
+var COL_DRIVER       = 1;
+var COL_DRIVER_PHONE = 2;
+var COL_TIME_OUT     = 10; // 1-based for Apps Script = 11
 
 function pad(n) { return String(n).padStart(2, '0'); }
-
-function nowDate() {
-  var d = new Date();
-  return (d.getMonth()+1) + '/' + d.getDate() + '/' + d.getFullYear();
-}
 
 function nowTime() {
   var d = new Date();
@@ -431,68 +350,150 @@ function nowDisplay() {
   return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + '  |  ' + h + ':' + pad(m) + ' ' + ampm;
 }
 
-async function submitForm() {
-  var driver = document.getElementById('d_driver').value.trim();
-  var driverPhone = document.getElementById('d_driverphone').value.trim();
-  var carrier = document.getElementById('d_carrier').value.trim();
-  var carrierPhone = document.getElementById('d_carrierphone').value.trim();
-  var dropOff = document.getElementById('d_dropoff').value || '0';
-  var pickup = document.getElementById('d_pickup').value || '0';
+function autoPhone(input) {
+  var digits = input.value.replace(/[^0-9]/g, '').slice(0, 10);
+  var formatted = digits;
+  if (digits.length > 6) {
+    formatted = digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
+  } else if (digits.length > 3) {
+    formatted = digits.slice(0,3) + '-' + digits.slice(3);
+  }
+  input.value = formatted;
+}
 
-  if (!driver) { showToast('Please enter your name'); return; }
-  if (!driverPhone) { showToast('Please enter your phone number'); return; }
-  if (!carrier) { showToast('Please enter carrier name'); return; }
+function normalizePhone(p) {
+  return String(p || '').replace(/[^0-9]/g, '');
+}
+
+function normalizeName(n) {
+  return String(n || '').trim().toLowerCase();
+}
+
+function parseCSV(text) {
+  var lines = text.split('\n');
+  return lines.map(function(line) {
+    var cols = [], cur = '', inQ = false;
+    for (var i = 0; i < line.length; i++) {
+      var c = line[i];
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    cols.push(cur.trim());
+    return cols;
+  }).filter(function(r) { return r.length > 1; });
+}
+
+async function fetchSheet() {
+  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
+            '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(SHEET_NAME);
+  var res = await fetch(url);
+  if (!res.ok) throw new Error('Could not load sheet data');
+  var text = await res.text();
+  var rows = parseCSV(text);
+  return rows.slice(1); // skip header row
+}
+
+function findDriverRow(rows, firstName, phone) {
+  var nameNorm  = normalizeName(firstName);
+  var phoneNorm = normalizePhone(phone);
+  var match     = null;
+  var matchRow  = -1;
+
+  rows.forEach(function(row, i) {
+    var rowName  = normalizeName(row[COL_DRIVER] || '');
+    var rowPhone = normalizePhone(row[COL_DRIVER_PHONE] || '');
+    var rowOut   = String(row[COL_TIME_OUT] || '').trim();
+
+    // Match on first name and phone digits
+    var nameMatch  = rowName === nameNorm ||
+                     rowName.split(' ')[0] === nameNorm;
+    var phoneMatch = phoneNorm.length >= 7 &&
+                     rowPhone.slice(-7) === phoneNorm.slice(-7);
+
+    // Only match records that are NOT already checked out
+    var notOut = !rowOut || rowOut === '0' || rowOut === '';
+
+    if (nameMatch && phoneMatch && notOut) {
+      // Prefer the most recent (last) matching unchecked record
+      match    = row;
+      matchRow = i + 2; // +1 for header, +1 for 1-based row number
+    }
+  });
+
+  return { row: match, rowNum: matchRow };
+}
+
+async function submitCheckOut() {
+  var firstName = document.getElementById('co_name').value.trim();
+  var phone     = document.getElementById('co_phone').value.trim();
+  var errBox    = document.getElementById('msgError');
+  var foundBox  = document.getElementById('msgFound');
+
+  errBox.classList.remove('show');
+  foundBox.classList.remove('show');
+
+  if (!firstName) { showError('Please enter your first name.'); return; }
+  if (!phone || normalizePhone(phone).length < 7) {
+    showError('Please enter your phone number.');
+    return;
+  }
 
   var btn = document.getElementById('submitBtn');
   btn.disabled = true;
-  btn.innerHTML = 'Submitting...';
-
-  // Row order: Date, Driver, DriverPhone, Carrier, CarrierPhone, Lane, DropOff, Pickup, Associate, TimeIn, TimeOut, Comments
-  var row = [
-    nowDate(),
-    driver,
-    driverPhone,
-    carrier,
-    carrierPhone,
-    '',
-    dropOff,
-    pickup,
-    '',
-    nowTime(),
-    '',
-    ''
-  ];
-
-  var qs = 'action=append&row=' + encodeURIComponent(JSON.stringify(row));
+  btn.innerHTML = 'Looking you up...';
 
   try {
+    var rows = await fetchSheet();
+    var result = findDriverRow(rows, firstName, phone);
+
+    if (!result.row || result.rowNum < 2) {
+      showError('No open check-in found for ' + firstName + ' with that phone number. Please check your details or see a staff member.');
+      btn.disabled = false;
+      btn.innerHTML = '&#10003; Check Out';
+      return;
+    }
+
+    // Found - stamp Time Out
+    btn.innerHTML = 'Checking you out...';
+    var timeOut = nowTime();
+    var qs = 'action=update&rowNum=' + result.rowNum +
+             '&col=11&value=' + encodeURIComponent(timeOut);
+
     await fetch(WEB_APP_URL + '?' + qs, { method: 'GET', mode: 'no-cors' });
     await new Promise(function(r) { setTimeout(r, 1800); });
 
-    // Show success
+    // Success
     document.getElementById('formWrap').style.display = 'none';
     var ss = document.getElementById('successScreen');
     ss.classList.add('visible');
+    document.getElementById('successName').textContent =
+      'Safe travels, ' + firstName + '!';
     document.getElementById('successTime').textContent = nowDisplay();
+
   } catch(err) {
-    showToast('Submission failed. Please try again.');
+    showError('Something went wrong: ' + err.message + '. Please try again or see a staff member.');
     btn.disabled = false;
-    btn.innerHTML = '<span>&#10003;</span> Submit Check-In';
+    btn.innerHTML = '&#10003; Check Out';
   }
 }
 
+function showError(msg) {
+  var errBox = document.getElementById('msgError');
+  errBox.textContent = msg;
+  errBox.classList.add('show');
+}
+
 function resetForm() {
-  document.getElementById('d_driver').value = '';
-  document.getElementById('d_driverphone').value = '';
-  document.getElementById('d_carrier').value = '';
-  document.getElementById('d_carrierphone').value = '';
-  document.getElementById('d_dropoff').value = '0';
-  document.getElementById('d_pickup').value = '0';
+  document.getElementById('co_name').value  = '';
+  document.getElementById('co_phone').value = '';
+  document.getElementById('msgError').classList.remove('show');
+  document.getElementById('msgFound').classList.remove('show');
   document.getElementById('successScreen').classList.remove('visible');
   document.getElementById('formWrap').style.display = 'block';
   var btn = document.getElementById('submitBtn');
   btn.disabled = false;
-  btn.innerHTML = '<span>&#10003;</span> Submit Check-In';
+  btn.innerHTML = '&#10003; Check Out';
   window.scrollTo(0, 0);
 }
 
@@ -503,6 +504,14 @@ function showToast(msg) {
   clearTimeout(t._t);
   t._t = setTimeout(function() { t.classList.remove('show'); }, 3500);
 }
+
+// Allow Enter key to submit
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    var btn = document.getElementById('submitBtn');
+    if (!btn.disabled) submitCheckOut();
+  }
+});
 </script>
 </body>
 </html>
