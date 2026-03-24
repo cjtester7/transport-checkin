@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Transport Check-In Log v18</title>
+<title>Transport Check-In Log v19</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -223,29 +223,35 @@
   /* Search */
   .search-wrap {
     position: relative;
-    margin-bottom: 12px;
+    margin-bottom: 0;
+    margin-top: 10px;
   }
   .search-wrap svg {
     position: absolute;
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--text3);
+    color: rgba(255,255,255,0.5);
   }
   .search-input {
     width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.18);
     border-radius: var(--radius);
     padding: 10px 12px 10px 38px;
-    color: var(--text);
+    color: #ffffff;
     font-family: 'Barlow', sans-serif;
     font-size: 16px;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, background 0.2s;
   }
-  .search-input:focus { border-color: var(--accent); }
-  .search-input::placeholder { color: var(--text3); }
+  .search-input:focus {
+    border-color: var(--accent);
+    background: rgba(255,255,255,0.15);
+  }
+  .search-input::placeholder { color: rgba(255,255,255,0.45); }
+  /* Light mode adjustments for search in header */
+  [data-theme="dark"] .search-input { background: rgba(255,255,255,0.08); }
 
   /* Log entries */
   .log-list { display: flex; flex-direction: column; gap: 8px; }
@@ -859,7 +865,7 @@
       <div class="header-icon">🚛</div>
       <div>
         <div class="header-title">Transport Log</div>
-        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v18</span></div>
+        <div class="header-subtitle">Check-In System &nbsp;·&nbsp; <span style="color:var(--accent)">v19</span></div>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
@@ -886,6 +892,11 @@
       </button>
     </div>
   </div>
+  <!-- Search bar — sticky in header, always visible -->
+  <div class="search-wrap" id="headerSearch">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input class="search-input" type="search" placeholder="Search driver, carrier…" oninput="filterLog(this.value)" id="searchInput" />
+  </div>
 </div>
 
 <!-- Log Tab -->
@@ -904,12 +915,6 @@
       <div class="stat-num" id="statActive">0</div>
       <div class="stat-label">On Site</div>
     </div>
-  </div>
-
-  <!-- Search & Refresh -->
-  <div class="search-wrap">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input class="search-input" type="search" placeholder="Search driver, carrier…" oninput="filterLog(this.value)" />
   </div>
 
   <div class="list-header">
@@ -1376,6 +1381,9 @@ function switchTab(tab) {
   if (tabBtns[tab]) tabBtns[tab].classList.add('active');
   document.getElementById('tab-'+tab).classList.remove('section-hidden');
   document.getElementById('fab').style.display = tab === 'log' ? 'flex' : 'none';
+  // Show/hide search bar based on tab
+  var hs = document.getElementById('headerSearch');
+  if (hs) hs.style.display = tab === 'log' ? 'block' : 'none';
 }
 
 // --- Load from Sheets (public CSV) or Web App -----------------
@@ -1596,7 +1604,7 @@ function setView(view) {
   currentView = view;
   document.getElementById('btnCardView').classList.toggle('active', view === 'card');
   document.getElementById('btnTableView').classList.toggle('active', view === 'table');
-  var q = document.querySelector('.search-input') ? document.querySelector('.search-input').value : '';
+  var q = document.getElementById('searchInput') ? document.getElementById('searchInput').value : '';
   filterLog(q);
 }
 
@@ -1617,13 +1625,14 @@ function updateStats(entries) {
 }
 
 function filterLog(q) {
-  q = q.toLowerCase();
-  const filtered = q ? allEntries.filter(e =>
-    (e.driver||'').toLowerCase().includes(q) ||
-    (e.carrier||'').toLowerCase().includes(q) ||
-    (e.associate||'').toLowerCase().includes(q) ||
-    String(e.lane||'').includes(q)
-  ) : allEntries;
+  q = (q || '').toLowerCase();
+  var filtered = q ? allEntries.filter(function(e) {
+    return (e.driver||'').toLowerCase().indexOf(q) >= 0 ||
+           (e.carrier||'').toLowerCase().indexOf(q) >= 0 ||
+           (e.associate||'').toLowerCase().indexOf(q) >= 0 ||
+           String(e.lane||'').indexOf(q) >= 0 ||
+           String(e.pin||'').indexOf(q) >= 0;
+  }) : allEntries;
   renderLog(filtered);
 }
 
